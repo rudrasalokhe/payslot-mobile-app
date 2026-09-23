@@ -46,12 +46,16 @@ MERGED from [androidx.autofill:autofill:1.0.0] C:\Users\Rudra\.gradle\caches\8.9
 MERGED from [androidx.core:core:1.12.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\b4e6d8aae58fdaf5022318171a06e707\transformed\core-1.12.0\AndroidManifest.xml:17:1-30:12
 MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\7eb1abe12edf95d0cba0aba1a2fe7052\transformed\jetified-customview-poolingcontainer-1.0.0\AndroidManifest.xml:17:1-23:12
 MERGED from [androidx.core:core-ktx:1.12.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\1c564690f13e688abf28c45ac366dbc9\transformed\jetified-core-ktx-1.12.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:17:1-31:12
+MERGED from [androidx.room:room-ktx:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\e08ab9313a4a455ace6c4ea0cc1f829c\transformed\jetified-room-ktx-2.6.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.sqlite:sqlite-framework:2.4.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\3eb72caad381fcff417f1d674be3cfb5\transformed\sqlite-framework-2.4.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.sqlite:sqlite:2.4.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\23fc920210c8104c55a143fc3e249d29\transformed\sqlite-2.4.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.compose.runtime:runtime-saveable-android:1.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\a3187f42eb3c9e2b08663b24a22e6b2a\transformed\jetified-runtime-saveable-release\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.compose.runtime:runtime-android:1.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\fd69d4c18373c61042bb58f2e35e57e0\transformed\jetified-runtime-release\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.annotation:annotation-experimental:1.4.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\b5081086de3eeae6d2f75ca51f8f56ed\transformed\jetified-annotation-experimental-1.4.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\8a4e163c1838fd617b22ef38c8cb176c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:17:1-27:12
-MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\cef3f4672c46303314fbcecba3e81834\transformed\interpolator-1.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\7c96ff7bf5a58fad7efa6131db8408ad\transformed\core-runtime-2.2.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\cef3f4672c46303314fbcecba3e81834\transformed\interpolator-1.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\104202d49716445982178f887c970722\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:17:1-55:12
 MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\a695e8e5337e575b46f5cf4da0ba76ac\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:17:1-33:12
 MERGED from [androidx.tracing:tracing:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\74dd22d55fcc72cd084c9c5b801f345c\transformed\jetified-tracing-1.0.0\AndroidManifest.xml:17:1-24:12
@@ -82,6 +86,8 @@ MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\Rudra\.gradle\
 MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\5e2b1bf49153c6a66557d2b82ff1cbd7\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:23:5-33:19
 MERGED from [androidx.core:core:1.12.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\b4e6d8aae58fdaf5022318171a06e707\transformed\core-1.12.0\AndroidManifest.xml:28:5-89
 MERGED from [androidx.core:core:1.12.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\b4e6d8aae58fdaf5022318171a06e707\transformed\core-1.12.0\AndroidManifest.xml:28:5-89
+MERGED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:23:5-29:19
+MERGED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:23:5-29:19
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\8a4e163c1838fd617b22ef38c8cb176c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\8a4e163c1838fd617b22ef38c8cb176c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
 MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\104202d49716445982178f887c970722\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:23:5-53:19
@@ -216,6 +222,14 @@ MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] C:\Users\Rud
 MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\7eb1abe12edf95d0cba0aba1a2fe7052\transformed\jetified-customview-poolingcontainer-1.0.0\AndroidManifest.xml:20:5-21:38
 MERGED from [androidx.core:core-ktx:1.12.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\1c564690f13e688abf28c45ac366dbc9\transformed\jetified-core-ktx-1.12.0\AndroidManifest.xml:5:5-44
 MERGED from [androidx.core:core-ktx:1.12.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\1c564690f13e688abf28c45ac366dbc9\transformed\jetified-core-ktx-1.12.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:21:5-44
+MERGED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:21:5-44
+MERGED from [androidx.room:room-ktx:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\e08ab9313a4a455ace6c4ea0cc1f829c\transformed\jetified-room-ktx-2.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.room:room-ktx:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\e08ab9313a4a455ace6c4ea0cc1f829c\transformed\jetified-room-ktx-2.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.sqlite:sqlite-framework:2.4.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\3eb72caad381fcff417f1d674be3cfb5\transformed\sqlite-framework-2.4.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.sqlite:sqlite-framework:2.4.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\3eb72caad381fcff417f1d674be3cfb5\transformed\sqlite-framework-2.4.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.sqlite:sqlite:2.4.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\23fc920210c8104c55a143fc3e249d29\transformed\sqlite-2.4.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.sqlite:sqlite:2.4.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\23fc920210c8104c55a143fc3e249d29\transformed\sqlite-2.4.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.compose.runtime:runtime-saveable-android:1.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\a3187f42eb3c9e2b08663b24a22e6b2a\transformed\jetified-runtime-saveable-release\AndroidManifest.xml:5:5-44
 MERGED from [androidx.compose.runtime:runtime-saveable-android:1.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\a3187f42eb3c9e2b08663b24a22e6b2a\transformed\jetified-runtime-saveable-release\AndroidManifest.xml:5:5-44
 MERGED from [androidx.compose.runtime:runtime-android:1.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\fd69d4c18373c61042bb58f2e35e57e0\transformed\jetified-runtime-release\AndroidManifest.xml:5:5-44
@@ -224,10 +238,10 @@ MERGED from [androidx.annotation:annotation-experimental:1.4.0] C:\Users\Rudra\.
 MERGED from [androidx.annotation:annotation-experimental:1.4.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\b5081086de3eeae6d2f75ca51f8f56ed\transformed\jetified-annotation-experimental-1.4.0\AndroidManifest.xml:5:5-44
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\8a4e163c1838fd617b22ef38c8cb176c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\8a4e163c1838fd617b22ef38c8cb176c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
-MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\cef3f4672c46303314fbcecba3e81834\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
-MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\cef3f4672c46303314fbcecba3e81834\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\7c96ff7bf5a58fad7efa6131db8408ad\transformed\core-runtime-2.2.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\7c96ff7bf5a58fad7efa6131db8408ad\transformed\core-runtime-2.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\cef3f4672c46303314fbcecba3e81834\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\cef3f4672c46303314fbcecba3e81834\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\104202d49716445982178f887c970722\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:21:5-44
 MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\104202d49716445982178f887c970722\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:21:5-44
 MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\a695e8e5337e575b46f5cf4da0ba76ac\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:21:5-23:41
@@ -298,6 +312,16 @@ uses-permission#com.docdirect.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
 ADDED from [androidx.core:core:1.12.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\b4e6d8aae58fdaf5022318171a06e707\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
 	android:name
 		ADDED from [androidx.core:core:1.12.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\b4e6d8aae58fdaf5022318171a06e707\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+service#androidx.room.MultiInstanceInvalidationService
+ADDED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:24:9-28:63
+	android:exported
+		ADDED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:27:13-37
+	tools:ignore
+		ADDED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:28:13-60
+	android:directBootAware
+		ADDED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:26:13-43
+	android:name
+		ADDED from [androidx.room:room-runtime:2.6.1] C:\Users\Rudra\.gradle\caches\8.9\transforms\5a0318366cc23993df791644c4a5ebd2\transformed\room-runtime-2.6.1\AndroidManifest.xml:25:13-74
 meta-data#androidx.profileinstaller.ProfileInstallerInitializer
 ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Rudra\.gradle\caches\8.9\transforms\104202d49716445982178f887c970722\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
 	android:value

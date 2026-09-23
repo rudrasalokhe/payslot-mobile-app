@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.docdirect.app.data.model.UserRole
-import com.docdirect.app.data.repository.AppRepository
 import com.docdirect.app.ui.theme.TealPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +78,6 @@ fun RoleSelectionScreen(
                 icon = Icons.Default.HealthAndSafety,
                 color = TealPrimary,
                 onClick = {
-                    AppRepository.getInstance().setRole(UserRole.DOCTOR)
                     onSelectRole(UserRole.DOCTOR)
                 }
             )
@@ -92,7 +90,6 @@ fun RoleSelectionScreen(
                 icon = Icons.Default.PersonSearch,
                 color = Color(0xFF0284C7),
                 onClick = {
-                    AppRepository.getInstance().setRole(UserRole.PATIENT)
                     onSelectRole(UserRole.PATIENT)
                 }
             )
