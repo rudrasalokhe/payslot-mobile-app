@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.ui.theme.TealPrimary
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,15 +31,17 @@ fun PaymentCheckoutScreen(
     onBookingSuccess: (appointmentId: String) -> Unit
 ) {
     val doctor = remember(doctorId) { viewModel.getDoctorById(doctorId) }
-    val slot = remember(doctor, slotId) { doctor?.availableSlots?.find { it.id == slotId } }
+    val slots by viewModel.getSlotsForDoctor(doctorId).collectAsState(initial = emptyList())
+    val slot = remember(slots, slotId) { slots.find { it.id == slotId } }
 
+    val coroutineScope = rememberCoroutineScope()
     var selectedPaymentMethod by remember { mutableStateOf("Credit / Debit Card") }
     var isProcessing by remember { mutableStateOf(false) }
     var confirmedAppointment by remember { mutableStateOf<Appointment?>(null) }
 
     if (doctor == null || slot == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Invalid booking parameters.")
+            Text("Loading booking parameters...")
         }
         return
     }
@@ -189,16 +192,18 @@ fun PaymentCheckoutScreen(
                 Button(
                     onClick = {
                         isProcessing = true
-                        // Simulate quick payment processing delay
-                        val createdApt = viewModel.bookAppointment(
-                            doctorId = doctorId,
-                            patientName = "Alex Rivera",
-                            slot = slot,
-                            symptoms = symptoms,
-                            fee = totalAmount
-                        )
-                        isProcessing = false
-                        confirmedAppointment = createdApt
+                        coroutineScope.launch {
+                            val createdApt = viewModel.bookAppointment(
+                                doctorId = doctor.id,
+                                doctorName = doctor.name,
+                                doctorSpecialty = doctor.specialty,
+                                slot = slot,
+                                symptoms = symptoms,
+                                fee = totalAmount
+                            )
+                            isProcessing = false
+                            confirmedAppointment = createdApt
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),

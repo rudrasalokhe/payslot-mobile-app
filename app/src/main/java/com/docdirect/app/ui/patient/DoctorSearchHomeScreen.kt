@@ -26,13 +26,16 @@ import com.docdirect.app.ui.theme.TealPrimary
 fun DoctorSearchHomeScreen(
     viewModel: PatientViewModel,
     onSelectDoctor: (doctorId: String) -> Unit,
-    onViewMyAppointments: () -> Unit
+    onViewMyAppointments: () -> Unit,
+    onSignOut: () -> Unit
 ) {
     val filteredDoctors by viewModel.filteredDoctors.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
 
-    val categories = listOf("All", "Cardiology", "Dermatology", "Pediatrics", "General Medicine", "Neurology")
+    var showSignOutDialog by remember { mutableStateOf(false) }
+
+    val categories = listOf("All", "Cardiology", "Dermatology", "Pediatrics", "General Medicine", "Neurology", "Orthopedics")
 
     Scaffold(
         topBar = {
@@ -45,7 +48,7 @@ fun DoctorSearchHomeScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Online Consultations & Care",
+                            text = "Hello, ${viewModel.currentUserName.ifBlank { "Patient" }}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -54,6 +57,9 @@ fun DoctorSearchHomeScreen(
                 actions = {
                     IconButton(onClick = onViewMyAppointments) {
                         Icon(Icons.Default.Event, contentDescription = "My Appointments", tint = TealPrimary)
+                    }
+                    IconButton(onClick = { showSignOutDialog = true }) {
+                        Icon(Icons.Default.Logout, contentDescription = "Sign Out")
                     }
                 }
             )
@@ -112,7 +118,7 @@ fun DoctorSearchHomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Available Specialists (${filteredDoctors.size})",
+                        text = "Registered Specialists (${filteredDoctors.size})",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -121,17 +127,35 @@ fun DoctorSearchHomeScreen(
 
             if (filteredDoctors.isEmpty()) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text(
-                            text = "No doctors matching your criteria.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PersonSearch,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = if (searchQuery.isNotBlank() || selectedCategory != "All") "No doctors matching filter." else "No registered doctors available yet.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Doctors who register in the Doctor Portal will appear here for booking.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             } else {
@@ -146,124 +170,25 @@ fun DoctorSearchHomeScreen(
             item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
-}
 
-@Composable
-fun DoctorCardItem(
-    doctor: DoctorProfile,
-    onBookClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onBookClick() },
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(TealPrimary.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MedicalServices,
-                        contentDescription = null,
-                        tint = TealPrimary,
-                        modifier = Modifier.size(28.dp)
-                    )
+    if (showSignOutDialog) {
+        AlertDialog(
+            onDismissRequest = { showSignOutDialog = false },
+            title = { Text("Sign Out") },
+            text = { Text("Are you sure you want to sign out of your patient account?") },
+            confirmButton = {
+                Button(onClick = {
+                    showSignOutDialog = false
+                    onSignOut()
+                }) {
+                    Text("Sign Out")
                 }
-
-                Spacer(modifier = Modifier.width(14.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = doctor.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Surface(
-                            color = Color(0xFFFEF3C7),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = "${doctor.rating} (${doctor.reviewCount})",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF92400E)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Text(
-                        text = "${doctor.specialty} • ${doctor.experienceYears} yrs exp",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Text(
-                        text = doctor.qualification,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            },
+            dismissButton = {
+                TextButton(onClick = { showSignOutDialog = false }) {
+                    Text("Cancel")
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Consultation Fee",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "\$${doctor.consultationFee.toInt()}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = TealPrimary
-                    )
-                }
-
-                Button(
-                    onClick = onBookClick,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = TealPrimary)
-                ) {
-                    Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Book Appointment")
-                }
-            }
-        }
+        )
     }
 }

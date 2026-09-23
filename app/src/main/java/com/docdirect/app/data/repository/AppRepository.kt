@@ -1,220 +1,234 @@
 package com.docdirect.app.data.repository
 
+import android.content.Context
+import com.docdirect.app.data.auth.SessionManager
+import com.docdirect.app.data.local.AppDatabase
+import com.docdirect.app.data.local.entity.*
 import com.docdirect.app.data.model.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.security.MessageDigest
 
-class AppRepository private constructor() {
+class AppRepository private constructor(context: Context) {
 
-    private val _currentRole = MutableStateFlow(UserRole.DOCTOR)
-    val currentRole: StateFlow<UserRole> = _currentRole.asStateFlow()
+    private val db = AppDatabase.getDatabase(context)
+    private val userDao = db.userDao()
+    private val doctorDao = db.doctorDao()
+    private val appointmentDao = db.appointmentDao()
+    private val chatDao = db.chatDao()
+    private val sessionManager = SessionManager.getInstance(context)
 
-    private val _currentDoctor = MutableStateFlow(
-        DoctorProfile(
-            id = "doc_1",
-            name = "Dr. Sarah Jenkins",
-            medicalLicense = "MED-884920",
-            specialty = "Cardiology",
-            qualification = "MD, MBBS - Harvard Medical School",
-            experienceYears = 12,
-            consultationFee = 65.0,
-            bio = "Senior Cardiologist specializing in preventive heart health, hypertension management, and echocardiography.",
-            rating = 4.9,
-            reviewCount = 142,
-            isAvailable = true,
-            hospitalAffiliation = "St. Jude Heart Institute",
-            availableSlots = listOf(
-                TimeSlot("s1", "Today", "09:00 AM", isBooked = true),
-                TimeSlot("s2", "Today", "10:30 AM", isBooked = false),
-                TimeSlot("s3", "Today", "02:00 PM", isBooked = false),
-                TimeSlot("s4", "Today", "04:30 PM", isBooked = false),
-                TimeSlot("s5", "Tomorrow", "11:00 AM", isBooked = false),
-                TimeSlot("s6", "Tomorrow", "03:00 PM", isBooked = false)
-            )
-        )
-    )
-    val currentDoctor: StateFlow<DoctorProfile> = _currentDoctor.asStateFlow()
+    val currentRole: StateFlow<UserRole> = MutableStateFlow(sessionManager.getUserRole()).asStateFlow()
 
-    private val _doctors = MutableStateFlow<List<DoctorProfile>>(
-        listOf(
-            _currentDoctor.value,
+    // Persistent Doctors stream
+    val doctors: Flow<List<DoctorProfile>> = doctorDao.getAllDoctors().map { entities ->
+        entities.map { entity ->
             DoctorProfile(
-                id = "doc_2",
-                name = "Dr. Michael Chen",
-                medicalLicense = "MED-772910",
-                specialty = "Dermatology",
-                qualification = "MD - Johns Hopkins University",
-                experienceYears = 8,
-                consultationFee = 50.0,
-                bio = "Expert Dermatologist treating acne, eczema, psoriasis, and cosmetic skincare solutions.",
-                rating = 4.8,
-                reviewCount = 98,
-                isAvailable = true,
-                hospitalAffiliation = "DermaCare Clinic",
-                availableSlots = listOf(
-                    TimeSlot("s21", "Today", "11:00 AM", isBooked = false),
-                    TimeSlot("s22", "Today", "03:30 PM", isBooked = false)
-                )
-            ),
-            DoctorProfile(
-                id = "doc_3",
-                name = "Dr. Emily Rodriguez",
-                medicalLicense = "MED-910244",
-                specialty = "Pediatrics",
-                qualification = "MD, DCH - Stanford Medicine",
-                experienceYears = 10,
-                consultationFee = 55.0,
-                bio = "Compassionate Pediatrician devoted to child growth, vaccination schedules, and infant care.",
-                rating = 4.95,
-                reviewCount = 210,
-                isAvailable = true,
-                hospitalAffiliation = "Children's General Hospital",
-                availableSlots = listOf(
-                    TimeSlot("s31", "Tomorrow", "09:30 AM", isBooked = false),
-                    TimeSlot("s32", "Tomorrow", "01:00 PM", isBooked = false)
-                )
-            ),
-            DoctorProfile(
-                id = "doc_4",
-                name = "Dr. James Wilson",
-                medicalLicense = "MED-334182",
-                specialty = "Neurology",
-                qualification = "MD, PhD - Columbia University",
-                experienceYears = 15,
-                consultationFee = 85.0,
-                bio = "Neurology specialist addressing migraine headaches, sleep disorders, and nerve conditions.",
-                rating = 4.7,
-                reviewCount = 76,
-                isAvailable = false,
-                hospitalAffiliation = "Brain & Spine Medical Center",
-                availableSlots = emptyList()
+                id = entity.id,
+                name = entity.name,
+                medicalLicense = entity.medicalLicense,
+                specialty = entity.specialty,
+                qualification = entity.qualification,
+                experienceYears = entity.experienceYears,
+                consultationFee = entity.consultationFee,
+                bio = entity.bio,
+                rating = entity.rating,
+                reviewCount = entity.reviewCount,
+                isAvailable = entity.isAvailable,
+                hospitalAffiliation = entity.hospitalAffiliation
             )
-        )
-    )
-    val doctors: StateFlow<List<DoctorProfile>> = _doctors.asStateFlow()
-
-    private val _appointments = MutableStateFlow<List<Appointment>>(
-        listOf(
-            Appointment(
-                id = "apt_101",
-                patientId = "pat_1",
-                patientName = "Alex Rivera",
-                doctorId = "doc_1",
-                doctorName = "Dr. Sarah Jenkins",
-                doctorSpecialty = "Cardiology",
-                appointmentDate = "Today",
-                appointmentTime = "09:00 AM",
-                symptoms = "Mild chest pressure after running and elevated blood pressure readings (138/88).",
-                feePaid = 65.0,
-                status = AppointmentStatus.UPCOMING,
-                transactionId = "TXN-8829104",
-                prescription = ""
-            ),
-            Appointment(
-                id = "apt_102",
-                patientId = "pat_2",
-                patientName = "Sophia Martinez",
-                doctorId = "doc_1",
-                doctorName = "Dr. Sarah Jenkins",
-                doctorSpecialty = "Cardiology",
-                appointmentDate = "Yesterday",
-                appointmentTime = "04:00 PM",
-                symptoms = "Follow-up consultation for cholesterol medication adjustment.",
-                feePaid = 65.0,
-                status = AppointmentStatus.COMPLETED,
-                transactionId = "TXN-7739102",
-                prescription = "Atorvastatin 10mg once daily at bedtime. Repeat lipid profile in 6 weeks."
-            )
-        )
-    )
-    val appointments: StateFlow<List<Appointment>> = _appointments.asStateFlow()
-
-    private val _chatMessages = MutableStateFlow<List<ChatMessage>>(
-        listOf(
-            ChatMessage(
-                id = "msg_1",
-                appointmentId = "apt_101",
-                senderId = "pat_1",
-                senderName = "Alex Rivera",
-                senderRole = UserRole.PATIENT,
-                messageText = "Hello Dr. Jenkins! I booked this appointment to review my recent blood pressure logs.",
-                timestamp = System.currentTimeMillis() - 600000
-            ),
-            ChatMessage(
-                id = "msg_2",
-                appointmentId = "apt_101",
-                senderId = "doc_1",
-                senderName = "Dr. Sarah Jenkins",
-                senderRole = UserRole.DOCTOR,
-                messageText = "Good morning Alex! Thank you for reaching out. Please share your recent BP readings.",
-                timestamp = System.currentTimeMillis() - 300000
-            )
-        )
-    )
-    val chatMessages: StateFlow<List<ChatMessage>> = _chatMessages.asStateFlow()
-
-    fun setRole(role: UserRole) {
-        _currentRole.value = role
+        }
     }
 
-    // Doctor management actions
-    fun toggleDoctorAvailability(isAvailable: Boolean) {
-        val updatedDoctor = _currentDoctor.value.copy(isAvailable = isAvailable)
-        _currentDoctor.value = updatedDoctor
-        _doctors.value = _doctors.value.map { if (it.id == updatedDoctor.id) updatedDoctor else it }
+    // Auth & Session Actions
+    fun isLoggedIn(): Boolean = sessionManager.isLoggedIn()
+    fun getCurrentUserId(): String? = sessionManager.getUserId()
+    fun getCurrentUserName(): String = sessionManager.getUserName()
+    fun getCurrentUserRole(): UserRole = sessionManager.getUserRole()
+
+    suspend fun registerUser(
+        name: String,
+        email: String,
+        password: String,
+        role: UserRole
+    ): Result<UserEntity> {
+        val existing = userDao.getUserByEmail(email.lowercase().trim())
+        if (existing != null) {
+            return Result.failure(Exception("An account with this email already exists."))
+        }
+
+        val userId = "user_${System.currentTimeMillis()}"
+        val pwdHash = hashPassword(password)
+        val newUser = UserEntity(
+            id = userId,
+            name = name.trim(),
+            email = email.lowercase().trim(),
+            passwordHash = pwdHash,
+            role = role
+        )
+
+        userDao.insertUser(newUser)
+        sessionManager.saveUserSession(userId, newUser.name, newUser.email, role)
+        return Result.success(newUser)
     }
 
-    fun updateDoctorFee(newFee: Double) {
-        val updatedDoctor = _currentDoctor.value.copy(consultationFee = newFee)
-        _currentDoctor.value = updatedDoctor
-        _doctors.value = _doctors.value.map { if (it.id == updatedDoctor.id) updatedDoctor else it }
-    }
-
-    fun updateDoctorProfile(specialty: String, qualification: String, bio: String, hospital: String) {
-        val updatedDoctor = _currentDoctor.value.copy(
+    suspend fun registerDoctorProfile(
+        userId: String,
+        name: String,
+        license: String,
+        specialty: String,
+        qualification: String,
+        experienceYears: Int,
+        fee: Double,
+        bio: String,
+        hospital: String
+    ) {
+        val doctorId = "doc_$userId"
+        val doctorEntity = DoctorEntity(
+            id = doctorId,
+            userId = userId,
+            name = name,
+            medicalLicense = license,
             specialty = specialty,
             qualification = qualification,
+            experienceYears = experienceYears,
+            consultationFee = fee,
             bio = bio,
-            hospitalAffiliation = hospital
+            hospitalAffiliation = hospital,
+            isAvailable = true
         )
-        _currentDoctor.value = updatedDoctor
-        _doctors.value = _doctors.value.map { if (it.id == updatedDoctor.id) updatedDoctor else it }
+        doctorDao.insertDoctor(doctorEntity)
     }
 
-    fun addTimeSlot(date: String, time: String) {
-        val newSlot = TimeSlot(id = "slot_${System.currentTimeMillis()}", date = date, time = time, isBooked = false)
-        val updatedSlots = _currentDoctor.value.availableSlots + newSlot
-        val updatedDoctor = _currentDoctor.value.copy(availableSlots = updatedSlots)
-        _currentDoctor.value = updatedDoctor
-        _doctors.value = _doctors.value.map { if (it.id == updatedDoctor.id) updatedDoctor else it }
+    suspend fun login(email: String, password: String): Result<UserEntity> {
+        val user = userDao.getUserByEmail(email.lowercase().trim())
+            ?: return Result.failure(Exception("Account not found. Please check your email."))
+
+        if (user.passwordHash != hashPassword(password)) {
+            return Result.failure(Exception("Incorrect password. Please try again."))
+        }
+
+        sessionManager.saveUserSession(user.id, user.name, user.email, user.role)
+        return Result.success(user)
     }
 
-    fun deleteTimeSlot(slotId: String) {
-        val updatedSlots = _currentDoctor.value.availableSlots.filter { it.id != slotId }
-        val updatedDoctor = _currentDoctor.value.copy(availableSlots = updatedSlots)
-        _currentDoctor.value = updatedDoctor
-        _doctors.value = _doctors.value.map { if (it.id == updatedDoctor.id) updatedDoctor else it }
+    fun logout() {
+        sessionManager.logout()
     }
 
-    // Appointment actions
-    fun bookAppointment(
+    // Doctor details & slots
+    fun getCurrentDoctorProfile(userId: String): Flow<DoctorProfile?> {
+        return doctorDao.getDoctorByUserIdFlow(userId).map { entity ->
+            entity?.let {
+                DoctorProfile(
+                    id = it.id,
+                    name = it.name,
+                    medicalLicense = it.medicalLicense,
+                    specialty = it.specialty,
+                    qualification = it.qualification,
+                    experienceYears = it.experienceYears,
+                    consultationFee = it.consultationFee,
+                    bio = it.bio,
+                    rating = it.rating,
+                    reviewCount = it.reviewCount,
+                    isAvailable = it.isAvailable,
+                    hospitalAffiliation = it.hospitalAffiliation
+                )
+            }
+        }
+    }
+
+    fun getSlotsForDoctor(doctorId: String): Flow<List<TimeSlot>> {
+        return doctorDao.getSlotsForDoctor(doctorId).map { entities ->
+            entities.map { TimeSlot(it.id, it.date, it.time, it.isBooked) }
+        }
+    }
+
+    suspend fun addTimeSlot(doctorId: String, date: String, time: String) {
+        val slotId = "slot_${System.currentTimeMillis()}"
+        doctorDao.insertSlot(SlotEntity(slotId, doctorId, date, time, false))
+    }
+
+    suspend fun deleteTimeSlot(slotId: String) {
+        doctorDao.deleteSlot(slotId)
+    }
+
+    suspend fun toggleDoctorAvailability(doctorId: String, isAvailable: Boolean) {
+        val doctor = doctorDao.getDoctorByUserId(doctorId)
+        doctor?.let {
+            doctorDao.updateDoctor(it.copy(isAvailable = isAvailable))
+        }
+    }
+
+    suspend fun updateDoctorFee(doctorId: String, newFee: Double) {
+        val doctor = doctorDao.getDoctorByUserId(doctorId)
+        doctor?.let {
+            doctorDao.updateDoctor(it.copy(consultationFee = newFee))
+        }
+    }
+
+    suspend fun updateDoctorProfile(
         doctorId: String,
+        specialty: String,
+        qualification: String,
+        bio: String,
+        hospital: String
+    ) {
+        val doctor = doctorDao.getDoctorByUserId(doctorId)
+        doctor?.let {
+            doctorDao.updateDoctor(
+                it.copy(
+                    specialty = specialty,
+                    qualification = qualification,
+                    bio = bio,
+                    hospitalAffiliation = hospital
+                )
+            )
+        }
+    }
+
+    // Appointments Flow
+    fun getAppointmentsForDoctor(doctorId: String): Flow<List<Appointment>> {
+        return appointmentDao.getAppointmentsForDoctor(doctorId).map { entities ->
+            entities.map { toAppointment(it) }
+        }
+    }
+
+    fun getAppointmentsForPatient(patientId: String): Flow<List<Appointment>> {
+        return appointmentDao.getAppointmentsForPatient(patientId).map { entities ->
+            entities.map { toAppointment(it) }
+        }
+    }
+
+    fun getAppointmentById(appointmentId: String): Flow<Appointment?> {
+        return appointmentDao.getAppointmentById(appointmentId).map { entity ->
+            entity?.let { toAppointment(it) }
+        }
+    }
+
+    suspend fun bookAppointment(
+        doctorId: String,
+        doctorName: String,
+        doctorSpecialty: String,
+        patientId: String,
         patientName: String,
+        slotId: String,
         date: String,
         time: String,
         symptoms: String,
         fee: Double
     ): Appointment {
-        val doctor = _doctors.value.find { it.id == doctorId } ?: _currentDoctor.value
+        val aptId = "apt_${System.currentTimeMillis()}"
         val txnId = "TXN-${System.currentTimeMillis().toString().takeLast(7)}"
-        val newApt = Appointment(
-            id = "apt_${System.currentTimeMillis()}",
-            patientId = "pat_current",
+        val entity = AppointmentEntity(
+            id = aptId,
+            patientId = patientId,
             patientName = patientName,
             doctorId = doctorId,
-            doctorName = doctor.name,
-            doctorSpecialty = doctor.specialty,
+            doctorName = doctorName,
+            doctorSpecialty = doctorSpecialty,
             appointmentDate = date,
             appointmentTime = time,
             symptoms = symptoms,
@@ -222,34 +236,38 @@ class AppRepository private constructor() {
             status = AppointmentStatus.UPCOMING,
             transactionId = txnId
         )
-        _appointments.value = listOf(newApt) + _appointments.value
-        return newApt
+        appointmentDao.insertAppointment(entity)
+        doctorDao.markSlotBooked(slotId)
+        return toAppointment(entity)
     }
 
-    fun updateAppointmentStatus(appointmentId: String, newStatus: AppointmentStatus) {
-        _appointments.value = _appointments.value.map {
-            if (it.id == appointmentId) it.copy(status = newStatus) else it
+    suspend fun updateAppointmentStatus(appointmentId: String, status: AppointmentStatus) {
+        appointmentDao.updateAppointmentStatus(appointmentId, status)
+    }
+
+    suspend fun addPrescription(appointmentId: String, prescriptionText: String) {
+        appointmentDao.addPrescription(appointmentId, prescriptionText)
+    }
+
+    // Chat Flow
+    fun getMessagesForAppointment(appointmentId: String): Flow<List<ChatMessage>> {
+        return chatDao.getMessagesForAppointment(appointmentId).map { entities ->
+            entities.map {
+                ChatMessage(
+                    id = it.id,
+                    appointmentId = it.appointmentId,
+                    senderId = it.senderId,
+                    senderName = it.senderName,
+                    senderRole = it.senderRole,
+                    messageText = it.messageText,
+                    isPrescription = it.isPrescription,
+                    timestamp = it.timestamp
+                )
+            }
         }
     }
 
-    fun addPrescription(appointmentId: String, prescriptionText: String) {
-        _appointments.value = _appointments.value.map {
-            if (it.id == appointmentId) it.copy(prescription = prescriptionText, status = AppointmentStatus.COMPLETED) else it
-        }
-        val currentApt = _appointments.value.find { it.id == appointmentId }
-        val docName = currentApt?.doctorName ?: "Doctor"
-        sendMessage(
-            appointmentId = appointmentId,
-            senderId = currentApt?.doctorId ?: "doc_1",
-            senderName = docName,
-            senderRole = UserRole.DOCTOR,
-            messageText = "📋 PRESCRIPTION:\n$prescriptionText",
-            isPrescription = true
-        )
-    }
-
-    // Chat actions
-    fun sendMessage(
+    suspend fun sendMessage(
         appointmentId: String,
         senderId: String,
         senderName: String,
@@ -257,7 +275,7 @@ class AppRepository private constructor() {
         messageText: String,
         isPrescription: Boolean = false
     ) {
-        val newMsg = ChatMessage(
+        val msgEntity = ChatMessageEntity(
             id = "msg_${System.currentTimeMillis()}",
             appointmentId = appointmentId,
             senderId = senderId,
@@ -266,16 +284,40 @@ class AppRepository private constructor() {
             messageText = messageText,
             isPrescription = isPrescription
         )
-        _chatMessages.value = _chatMessages.value + newMsg
+        chatDao.insertMessage(msgEntity)
+    }
+
+    private fun toAppointment(entity: AppointmentEntity): Appointment {
+        return Appointment(
+            id = entity.id,
+            patientId = entity.patientId,
+            patientName = entity.patientName,
+            doctorId = entity.doctorId,
+            doctorName = entity.doctorName,
+            doctorSpecialty = entity.doctorSpecialty,
+            appointmentDate = entity.appointmentDate,
+            appointmentTime = entity.appointmentTime,
+            symptoms = entity.symptoms,
+            feePaid = entity.feePaid,
+            status = entity.status,
+            transactionId = entity.transactionId,
+            prescription = entity.prescription,
+            createdAt = entity.createdAt
+        )
+    }
+
+    private fun hashPassword(password: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     companion object {
         @Volatile
         private var instance: AppRepository? = null
 
-        fun getInstance(): AppRepository {
+        fun getInstance(context: Context): AppRepository {
             return instance ?: synchronized(this) {
-                instance ?: AppRepository().also { instance = it }
+                instance ?: AppRepository(context.applicationContext).also { instance = it }
             }
         }
     }

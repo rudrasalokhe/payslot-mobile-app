@@ -28,6 +28,7 @@ fun DoctorDetailScreen(
     onProceedToPayment: (slotId: String, symptoms: String) -> Unit
 ) {
     val doctor = remember(doctorId) { viewModel.getDoctorById(doctorId) }
+    val availableSlots by viewModel.getSlotsForDoctor(doctorId).collectAsState(initial = emptyList())
 
     var selectedSlot by remember { mutableStateOf<TimeSlot?>(null) }
     var symptomsText by remember { mutableStateOf("") }
@@ -108,35 +109,38 @@ fun DoctorDetailScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "🏥 ${doctor.hospitalAffiliation}",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium
-                        )
+                        if (doctor.hospitalAffiliation.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "🏥 ${doctor.hospitalAffiliation}",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }
 
             // Doctor Bio Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "About Doctor",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = doctor.bio,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            if (doctor.bio.isNotBlank()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "About Doctor",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = doctor.bio,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -150,7 +154,8 @@ fun DoctorDetailScreen(
                 )
             }
 
-            if (doctor.availableSlots.none { !it.isBooked }) {
+            val unbookedSlots = availableSlots.filter { !it.isBooked }
+            if (unbookedSlots.isEmpty()) {
                 item {
                     Text(
                         text = "No open slots available at the moment. Please check back later.",
@@ -161,7 +166,7 @@ fun DoctorDetailScreen(
             } else {
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        doctor.availableSlots.filter { !it.isBooked }.forEach { slot ->
+                        unbookedSlots.forEach { slot ->
                             val isSelected = selectedSlot?.id == slot.id
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),

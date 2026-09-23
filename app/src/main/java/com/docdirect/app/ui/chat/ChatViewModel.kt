@@ -1,6 +1,7 @@
 package com.docdirect.app.ui.chat
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.ChatMessage
@@ -8,19 +9,19 @@ import com.docdirect.app.data.model.UserRole
 import com.docdirect.app.data.repository.AppRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class ChatViewModel(
-    private val repository: AppRepository = AppRepository.getInstance()
-) : ViewModel() {
+class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
-    val currentRole: StateFlow<UserRole> = repository.currentRole
+    private val repository = AppRepository.getInstance(application)
+
+    fun getCurrentRole(): UserRole = repository.getCurrentUserRole()
+    fun getCurrentUserId(): String = repository.getCurrentUserId() ?: ""
+    fun getCurrentUserName(): String = repository.getCurrentUserName()
 
     fun getAppointment(appointmentId: String): StateFlow<Appointment?> {
-        return repository.appointments.map { list ->
-            list.find { it.id == appointmentId }
-        }.stateIn(
+        return repository.getAppointmentById(appointmentId).stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
@@ -28,9 +29,7 @@ class ChatViewModel(
     }
 
     fun getMessagesForAppointment(appointmentId: String): StateFlow<List<ChatMessage>> {
-        return repository.chatMessages.map { messages ->
-            messages.filter { it.appointmentId == appointmentId }
-        }.stateIn(
+        return repository.getMessagesForAppointment(appointmentId).stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
@@ -45,17 +44,21 @@ class ChatViewModel(
         text: String
     ) {
         if (text.isNotBlank()) {
-            repository.sendMessage(
-                appointmentId = appointmentId,
-                senderId = senderId,
-                senderName = senderName,
-                senderRole = role,
-                messageText = text
-            )
+            viewModelScope.launch {
+                repository.sendMessage(
+                    appointmentId = appointmentId,
+                    senderId = senderId,
+                    senderName = senderName,
+                    senderRole = role,
+                    messageText = text
+                )
+            }
         }
     }
 
     fun issuePrescription(appointmentId: String, prescriptionText: String) {
-        repository.addPrescription(appointmentId, prescriptionText)
+        viewModelScope.launch {
+            repository.addPrescription(appointmentId, prescriptionText)
+        }
     }
 }
