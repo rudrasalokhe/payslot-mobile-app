@@ -16,6 +16,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = AppRepository.getInstance(application)
 
+    val currentRole: StateFlow<UserRole> = repository.currentRole
+
     fun getCurrentRole(): UserRole = repository.getCurrentUserRole()
     fun getCurrentUserId(): String = repository.getCurrentUserId() ?: ""
     fun getCurrentUserName(): String = repository.getCurrentUserName()
