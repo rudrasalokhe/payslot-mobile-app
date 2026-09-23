@@ -8,31 +8,47 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
-    primary = TealPrimary,
-    onPrimary = SurfaceLight,
-    primaryContainer = TealLight,
-    onPrimaryContainer = TealDark,
-    secondary = MedicalBlue,
-    onSecondary = SurfaceLight,
-    secondaryContainer = MedicalBlueLight,
-    onSecondaryContainer = MedicalNavy,
-    background = BackgroundLight,
-    surface = SurfaceLight,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary
+    primary = AuraPrimary,
+    onPrimary = AuraOnPrimary,
+    primaryContainer = AuraPrimaryContainer,
+    onPrimaryContainer = AuraOnPrimaryContainer,
+    secondary = AuraSecondary,
+    onSecondary = Color.White,
+    secondaryContainer = AuraSecondaryContainer,
+    onSecondaryContainer = AuraOnSecondaryContainer,
+    tertiary = AuraTertiary,
+    onTertiary = Color.White,
+    background = AuraBackground,
+    surface = AuraSurface,
+    surfaceVariant = AuraSurfaceContainerHighest,
+    onBackground = AuraOnSurface,
+    onSurface = AuraOnSurface,
+    onSurfaceVariant = AuraOnSurfaceVariant,
+    outline = AuraOutline,
+    outlineVariant = AuraOutlineVariant,
+    error = AuraError
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = TealAccent,
-    onPrimary = MedicalNavy,
-    primaryContainer = TealDark,
-    onPrimaryContainer = TealLight,
-    secondary = MedicalBlue,
-    onSecondary = MedicalNavy,
-    background = MedicalNavy,
-    surface = Color(0xFF1E293B),
-    onBackground = SurfaceLight,
-    onSurface = SurfaceLight
+    primary = AuraInversePrimary,
+    onPrimary = AuraOnSurface,
+    primaryContainer = AuraPrimary,
+    onPrimaryContainer = AuraOnPrimaryContainer,
+    secondary = AuraSecondaryFixedDim,
+    onSecondary = AuraOnSurface,
+    secondaryContainer = AuraSecondary,
+    onSecondaryContainer = AuraSecondaryContainer,
+    tertiary = Color(0xFF93CCFF),
+    onTertiary = Color(0xFF001D31),
+    background = AuraInverseSurface,
+    surface = Color(0xFF1E2638),
+    surfaceVariant = Color(0xFF333E54),
+    onBackground = AuraInverseOnSurface,
+    onSurface = AuraInverseOnSurface,
+    onSurfaceVariant = Color(0xFFB0BDBC),
+    outline = AuraOutlineVariant,
+    outlineVariant = Color(0xFF4A5654),
+    error = Color(0xFFFFB4AB)
 )
 
 @Composable

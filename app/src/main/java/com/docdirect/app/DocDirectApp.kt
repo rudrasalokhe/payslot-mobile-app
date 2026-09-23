@@ -1,15 +1,9 @@
 package com.docdirect.app
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -18,18 +12,17 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.docdirect.app.data.model.UserRole
 import com.docdirect.app.ui.auth.AuthViewModel
+import com.docdirect.app.ui.auth.ClinicalAccessAuthScreen
 import com.docdirect.app.ui.auth.DoctorSignupScreen
-import com.docdirect.app.ui.auth.LoginScreen
-import com.docdirect.app.ui.auth.PatientSignupScreen
 import com.docdirect.app.ui.chat.ChatViewModel
 import com.docdirect.app.ui.chat.OnlineChatScreen
+import com.docdirect.app.ui.consultation.TelehealthConsultationScreen
 import com.docdirect.app.ui.doctor.DoctorAppointmentsScreen
 import com.docdirect.app.ui.doctor.DoctorDashboardScreen
 import com.docdirect.app.ui.doctor.DoctorViewModel
 import com.docdirect.app.ui.doctor.SlotManagerScreen
 import com.docdirect.app.ui.patient.*
 import com.docdirect.app.ui.theme.DocDirectTheme
-import com.docdirect.app.ui.theme.TealPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,9 +35,9 @@ fun DocDirectApp() {
 
     val startDest = remember {
         if (authViewModel.isLoggedIn()) {
-            if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) "doctor_dashboard" else "patient_home"
+            if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) "doctor_dashboard" else "aura_home"
         } else {
-            "login"
+            "clinical_auth"
         }
     }
 
@@ -53,14 +46,13 @@ fun DocDirectApp() {
             navController = navController,
             startDestination = startDest
         ) {
-            // Auth Routes
-            composable("login") {
-                LoginScreen(
+            // Screen 1: Clinical Access & Intake Portal
+            composable("clinical_auth") {
+                ClinicalAccessAuthScreen(
                     authViewModel = authViewModel,
                     onNavigateToDoctorSignup = { navController.navigate("doctor_signup") },
-                    onNavigateToPatientSignup = { navController.navigate("patient_signup") },
                     onLoginSuccess = { role ->
-                        val dest = if (role == UserRole.DOCTOR) "doctor_dashboard" else "patient_home"
+                        val dest = if (role == UserRole.DOCTOR) "doctor_dashboard" else "aura_home"
                         navController.navigate(dest) {
                             popUpTo(0)
                         }
@@ -80,15 +72,44 @@ fun DocDirectApp() {
                 )
             }
 
-            composable("patient_signup") {
-                PatientSignupScreen(
-                    authViewModel = authViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    onSignupSuccess = {
-                        navController.navigate("patient_home") {
+            // Screen 3: Patient Overview & Vitals Dashboard
+            composable("aura_home") {
+                AuraHomeScreen(
+                    userName = patientViewModel.currentUserName.ifBlank { "Alex" },
+                    onNavigateToClinicians = { navController.navigate("clinicians") },
+                    onNavigateToTelehealthCall = { navController.navigate("telehealth_call/Dr. Julian Vance, MD") },
+                    onOpenChat = { navController.navigate("chat/general_care") },
+                    onSignOut = {
+                        authViewModel.logout()
+                        navController.navigate("clinical_auth") {
                             popUpTo(0)
                         }
                     }
+                )
+            }
+
+            // Screen 4: Clinicians Directory & Fast Booking
+            composable("clinicians") {
+                CliniciansDirectoryScreen(
+                    patientViewModel = patientViewModel,
+                    onNavigateToHome = { navController.navigate("aura_home") },
+                    onNavigateToTelehealthCall = { docName -> navController.navigate("telehealth_call/$docName") },
+                    onOpenChat = { navController.navigate("chat/general_care") },
+                    onSelectDoctor = { docId -> navController.navigate("doctor_detail/$docId") }
+                )
+            }
+
+            // Screen 2: Telehealth Video Consultation & Biometrics HUD
+            composable(
+                "telehealth_call/{doctorName}",
+                arguments = listOf(navArgument("doctorName") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val docName = backStackEntry.arguments?.getString("doctorName") ?: "Dr. Julian Vance, MD"
+                TelehealthConsultationScreen(
+                    doctorName = docName,
+                    specialty = "Longevity & Preventive Medicine",
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenChat = { navController.navigate("chat/call_session") }
                 )
             }
 
@@ -101,7 +122,7 @@ fun DocDirectApp() {
                     onOpenChat = { aptId -> navController.navigate("chat/$aptId") },
                     onSignOut = {
                         authViewModel.logout()
-                        navController.navigate("login") {
+                        navController.navigate("clinical_auth") {
                             popUpTo(0)
                         }
                     }
@@ -123,21 +144,7 @@ fun DocDirectApp() {
                 )
             }
 
-            // Patient Portal Screens
-            composable("patient_home") {
-                DoctorSearchHomeScreen(
-                    viewModel = patientViewModel,
-                    onSelectDoctor = { docId -> navController.navigate("doctor_detail/$docId") },
-                    onViewMyAppointments = { navController.navigate("patient_appointments") },
-                    onSignOut = {
-                        authViewModel.logout()
-                        navController.navigate("login") {
-                            popUpTo(0)
-                        }
-                    }
-                )
-            }
-
+            // Slot Booking & Checkout
             composable(
                 "doctor_detail/{doctorId}",
                 arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
@@ -171,22 +178,14 @@ fun DocDirectApp() {
                     viewModel = patientViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onBookingSuccess = { aptId ->
-                        navController.navigate("chat/$aptId") {
-                            popUpTo("patient_home")
+                        navController.navigate("telehealth_call/Dr. Julian Vance, MD") {
+                            popUpTo("aura_home")
                         }
                     }
                 )
             }
 
-            composable("patient_appointments") {
-                PatientAppointmentsScreen(
-                    viewModel = patientViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    onOpenChat = { aptId -> navController.navigate("chat/$aptId") }
-                )
-            }
-
-            // Shared Online Consultation Chat
+            // Real-time Chat
             composable(
                 "chat/{appointmentId}",
                 arguments = listOf(navArgument("appointmentId") { type = NavType.StringType })
