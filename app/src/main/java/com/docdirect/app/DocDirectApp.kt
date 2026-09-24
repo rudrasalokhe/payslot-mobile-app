@@ -35,6 +35,13 @@ fun DocDirectApp() {
     val patientViewModel: PatientViewModel = viewModel()
     val chatViewModel: ChatViewModel = viewModel()
 
+    var regName by remember { mutableStateOf("") }
+    var regEmail by remember { mutableStateOf("") }
+    var regPassword by remember { mutableStateOf("") }
+    var regPreferredName by remember { mutableStateOf("") }
+    var regDob by remember { mutableStateOf("") }
+    var regPhone by remember { mutableStateOf("") }
+
     val startDest = remember {
         if (authViewModel.isLoggedIn()) {
             if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) "aven_clinician" else "aven_home"
@@ -48,28 +55,108 @@ fun DocDirectApp() {
             navController = navController,
             startDestination = startDest
         ) {
-            // ===== AVEN CORE SCREENS =====
+            // ===== AVEN CORE ONBOARDING & AUTH SCREENS =====
 
-            // Screen 0: Aven Welcome / Direction Entry Point
+            // Screen 0: Aven Welcome / Landing Screen (Exact welcome.svg)
             composable("aven_welcome") {
                 AvenWelcomeScreen(
-                    onPatientEnter = {
-                        navController.navigate("aven_home") {
-                            popUpTo(0)
+                    onCreateAccount = { navController.navigate("aven_signup") },
+                    onLogin = { navController.navigate("aven_login") },
+                    onExploreFirst = { navController.navigate("aven_explore") },
+                    onClinicianEnter = { navController.navigate("aven_clinician") },
+                    onOperationsEnter = { navController.navigate("aven_operations") }
+                )
+            }
+
+            // Screen 0.1: Aven Sign Up (Exact signup.svg)
+            composable("aven_signup") {
+                AvenSignUpScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToLogin = { navController.navigate("aven_login") },
+                    onProceedToVerify = { name, email, password ->
+                        regName = name
+                        regEmail = email
+                        regPassword = password
+                        regPreferredName = name.split(" ").firstOrNull() ?: name
+                        navController.navigate("aven_verify")
+                    }
+                )
+            }
+
+            // Screen 0.2: Aven Email Verification (Exact verify.svg)
+            composable("aven_verify") {
+                AvenVerifyScreen(
+                    email = regEmail,
+                    onNavigateBack = { navController.popBackStack() },
+                    onVerified = {
+                        navController.navigate("aven_setup")
+                    }
+                )
+            }
+
+            // Screen 0.3: Aven Personal Setup (Exact setup.svg)
+            composable("aven_setup") {
+                AvenSetupScreen(
+                    initialName = regName,
+                    onNavigateBack = { navController.popBackStack() },
+                    onContinue = { preferredName, dob, phone ->
+                        regPreferredName = preferredName
+                        regDob = dob
+                        regPhone = phone
+                        navController.navigate("aven_permissions")
+                    }
+                )
+            }
+
+            // Screen 0.4: Aven Permissions & Control (Exact permissions.svg)
+            composable("aven_permissions") {
+                AvenPermissionsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onFinishSetup = { _, _ ->
+                        authViewModel.registerPatient(regName, regEmail, regPassword) {
+                            authViewModel.saveUserDetails(regPhone, regDob, regPreferredName)
+                            patientViewModel.refreshUserSession()
+                            navController.navigate("aven_home") {
+                                popUpTo(0)
+                            }
                         }
                     },
-                    onClinicianEnter = {
-                        navController.navigate("aven_clinician")
-                    },
-                    onOperationsEnter = {
-                        navController.navigate("aven_operations")
+                    onSkip = {
+                        authViewModel.registerPatient(regName, regEmail, regPassword) {
+                            authViewModel.saveUserDetails(regPhone, regDob, regPreferredName)
+                            patientViewModel.refreshUserSession()
+                            navController.navigate("aven_home") {
+                                popUpTo(0)
+                            }
+                        }
+                    }
+                )
+            }
+
+            // Screen 0.5: Aven Log In (Exact login.svg)
+            composable("aven_login") {
+                AvenLoginScreen(
+                    authViewModel = authViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToSignUp = { navController.navigate("aven_signup") },
+                    onLoginSuccess = {
+                        patientViewModel.refreshUserSession()
+                        if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) {
+                            navController.navigate("aven_clinician") {
+                                popUpTo(0)
+                            }
+                        } else {
+                            navController.navigate("aven_home") {
+                                popUpTo(0)
+                            }
+                        }
                     }
                 )
             }
 
             // Screen 1: Aven Patient Home
             composable("aven_home") {
-                val userName = patientViewModel.currentUserName.ifBlank { "Aarav Mehta" }
+                val userName = patientViewModel.currentUserName.ifBlank { "You" }
                 AvenHomeScreen(
                     patientViewModel = patientViewModel,
                     userName = userName,
@@ -261,8 +348,8 @@ fun DocDirectApp() {
                 val remoteNameEncoded = backStackEntry.arguments?.getString("remoteUserName") ?: ""
                 val remoteName = try { URLDecoder.decode(remoteNameEncoded, "UTF-8") } catch (e: Exception) { remoteNameEncoded }
                 val isDoctor = authViewModel.getCurrentUserRole() == UserRole.DOCTOR
-                val localUserId = authViewModel.getCurrentUserId().ifBlank { "user_aarav_mehta" }
-                val localUserName = authViewModel.getCurrentUserName().ifBlank { "Aarav Mehta" }
+                val localUserId = authViewModel.getCurrentUserId().ifBlank { patientViewModel.currentUserId }
+                val localUserName = authViewModel.getCurrentUserName().ifBlank { patientViewModel.currentUserName.ifBlank { "Patient" } }
 
                 AgoraVideoCallScreen(
                     appointmentId = aptId,

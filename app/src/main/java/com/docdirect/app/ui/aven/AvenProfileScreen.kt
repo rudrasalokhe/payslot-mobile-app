@@ -119,6 +119,15 @@ fun AvenProfileScreen(
                     color = AvenDeep,
                     shadowElevation = 2.dp
                 ) {
+                    val displayName = patientViewModel.currentUserName.ifBlank { "You" }
+                    val displayEmail = patientViewModel.currentUserEmail.ifBlank { "your.email@example.com" }
+                    val initials = displayName.split(" ")
+                        .filter { it.isNotBlank() }
+                        .mapNotNull { it.firstOrNull()?.uppercase() }
+                        .take(2)
+                        .joinToString("")
+                        .ifBlank { "U" }
+
                     Row(
                         modifier = Modifier.padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -130,15 +139,15 @@ fun AvenProfileScreen(
                                 .background(AvenLime),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("AM", color = AvenDeep, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                            Text(initials, color = AvenDeep, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                         }
 
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Column {
-                            Text("Aarav Mehta", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
+                            Text(displayName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text("aarav@example.com", fontSize = 12.sp, color = Color(0xFFC2D8CD))
+                            Text(displayEmail, fontSize = 12.sp, color = Color(0xFFC2D8CD))
                             Spacer(modifier = Modifier.height(4.dp))
                             Text("Edit profile →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenLime)
                         }

@@ -4,11 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,9 +24,11 @@ import com.docdirect.app.ui.theme.*
 
 @Composable
 fun AvenWelcomeScreen(
-    onPatientEnter: () -> Unit,
-    onClinicianEnter: () -> Unit,
-    onOperationsEnter: () -> Unit
+    onCreateAccount: () -> Unit,
+    onLogin: () -> Unit,
+    onExploreFirst: () -> Unit,
+    onClinicianEnter: () -> Unit = {},
+    onOperationsEnter: () -> Unit = {}
 ) {
     Scaffold(
         containerColor = AvenBg
@@ -33,148 +37,263 @@ fun AvenWelcomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .verticalScroll(rememberScrollState())
         ) {
-            Column {
-                Spacer(modifier = Modifier.height(40.dp))
-
-                // Brand Pill
-                Surface(
-                    color = AvenMint,
-                    shape = RoundedCornerShape(100.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.2f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(AvenTeal)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+            // Dark Teal Top Section (#0B3937)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AvenDeep)
+                    .statusBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+            ) {
+                Column {
+                    // Logo row: [A] aven
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = AvenLime,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "A",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 20.sp,
+                                    color = AvenDeep
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "AVEN HEALTH",
+                            text = "aven",
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AvenWhite,
+                            letterSpacing = (-0.7).sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    // Pill: CARE, ON YOUR TERMS
+                    Surface(
+                        shape = RoundedCornerShape(15.dp),
+                        color = AvenLime
+                    ) {
+                        Text(
+                            text = "CARE, ON YOUR TERMS",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AvenDeep,
-                            letterSpacing = 1.sp
+                            color = AvenInk,
+                            letterSpacing = 0.5.sp,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                // Hero Headline
-                Text(
-                    text = "A little less waiting.\nA lot more living.",
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AvenInk,
-                    lineHeight = 44.sp
-                )
+                    // Big Headline
+                    Text(
+                        text = "A little less waiting.\nA lot more living.",
+                        fontSize = 31.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenWhite,
+                        lineHeight = 38.sp,
+                        letterSpacing = (-0.7).sp
+                    )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                Text(
-                    text = "Your doctor, your time. All your care, together with transparent INR consultation fees, verified Indian clinicians, and high-definition video calls.",
-                    fontSize = 15.sp,
-                    color = AvenMuted,
-                    lineHeight = 22.sp
-                )
+                    Text(
+                        text = "Your doctor, your time.\nAll your care, together.",
+                        fontSize = 16.sp,
+                        color = Color(0xFFCCDCD5),
+                        lineHeight = 24.sp
+                    )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(36.dp))
 
-                // Clinician Spotlight Card
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp),
-                    color = AvenWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                    shadowElevation = 2.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(18.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    // Floating Doctor Card and Lime Accent Circle
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = AvenWhite,
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.fillMaxWidth(0.82f)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(52.dp)
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(Color(0xFFD8E7D6)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("MS", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AvenTeal)
+                                    }
+                                    Spacer(modifier = Modifier.width(14.dp))
+                                    Column {
+                                        Text(
+                                            text = "Dr Mira Shah",
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AvenInk
+                                        )
+                                        Text(
+                                            text = "Dermatologist",
+                                            fontSize = 12.sp,
+                                            color = AvenMuted
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Surface(
+                                    shape = RoundedCornerShape(15.dp),
+                                    color = AvenMint,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(vertical = 7.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "Tomorrow · 3:30 PM",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AvenTeal
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Floating Lime Checkmark Circle
                         Box(
                             modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = 8.dp)
                                 .size(52.dp)
                                 .clip(CircleShape)
-                                .background(AvenMint),
+                                .background(AvenLime),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("MS", color = AvenTeal, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
-
-                        Spacer(modifier = Modifier.width(14.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Dr Mira Shah", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AvenInk)
-                                Text("₹1,200", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AvenTeal)
-                            }
-                            Text("Dermatologist • Bandra Skin Clinic", fontSize = 12.sp, color = AvenMuted)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Star, contentDescription = null, tint = AvenAmber, modifier = Modifier.size(13.dp))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("4.9 (128 reviews) • Available today", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AvenAmber)
-                            }
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = AvenDeep,
+                                modifier = Modifier.size(26.dp)
+                            )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
 
-            // Bottom CTAs
+            // Light Bottom Section (#F5F7F3)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .background(AvenBg)
+                    .padding(horizontal = 24.dp, vertical = 28.dp)
             ) {
+                Text(
+                    text = "Good care starts here.",
+                    fontSize = 23.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AvenInk
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Find the right doctor. Book with clarity.",
+                    fontSize = 14.sp,
+                    color = AvenMuted
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Primary CTA: Create an account
                 Button(
-                    onClick = onPatientEnter,
+                    onClick = onCreateAccount,
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp)
                 ) {
-                    Text("Get Started as Patient", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(
+                        text = "Create an account",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenWhite
+                    )
                 }
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Secondary CTA: I already have an account
+                OutlinedButton(
+                    onClick = onLogin,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = AvenWhite),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                ) {
+                    Text(
+                        text = "I already have an account",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenInk
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Tertiary link: Explore doctors first
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onExploreFirst() }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Explore doctors first",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenTeal
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Fast links for Clinician and Admin portals
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
-                        onClick = onClinicianEnter,
-                        shape = RoundedCornerShape(14.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                        modifier = Modifier.weight(1f).height(48.dp)
-                    ) {
-                        Text("Dr Shah Portal", fontSize = 13.sp, color = AvenInk, fontWeight = FontWeight.SemiBold)
-                    }
-
-                    OutlinedButton(
-                        onClick = onOperationsEnter,
-                        shape = RoundedCornerShape(14.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                        modifier = Modifier.weight(1f).height(48.dp)
-                    ) {
-                        Text("Admin Ops", fontSize = 13.sp, color = AvenInk, fontWeight = FontWeight.SemiBold)
-                    }
+                    Text(
+                        text = "Clinician portal",
+                        fontSize = 11.sp,
+                        color = AvenMuted,
+                        modifier = Modifier.clickable { onClinicianEnter() }
+                    )
+                    Text("  •  ", fontSize = 11.sp, color = AvenLine)
+                    Text(
+                        text = "Operations desk",
+                        fontSize = 11.sp,
+                        color = AvenMuted,
+                        modifier = Modifier.clickable { onOperationsEnter() }
+                    )
                 }
             }
         }

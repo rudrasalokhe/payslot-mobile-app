@@ -44,6 +44,28 @@ class SessionManager(context: Context) {
         }
     }
 
+    fun saveUserDetails(phone: String, dob: String, preferredName: String) {
+        prefs.edit().apply {
+            putString(KEY_PHONE, phone)
+            putString(KEY_DOB, dob)
+            putString(KEY_PREFERRED_NAME, preferredName)
+            apply()
+        }
+    }
+
+    fun getUserPhone(): String {
+        return prefs.getString(KEY_PHONE, "+91 98765 43210") ?: "+91 98765 43210"
+    }
+
+    fun getUserDob(): String {
+        return prefs.getString(KEY_DOB, "18 March 1998") ?: "18 March 1998"
+    }
+
+    fun getUserPreferredName(): String {
+        val pref = prefs.getString(KEY_PREFERRED_NAME, "") ?: ""
+        return if (pref.isNotBlank()) pref else getUserName().split(" ").firstOrNull() ?: getUserName()
+    }
+
     fun logout() {
         prefs.edit().clear().apply()
     }
@@ -54,6 +76,9 @@ class SessionManager(context: Context) {
         private const val KEY_NAME = "user_name"
         private const val KEY_EMAIL = "user_email"
         private const val KEY_ROLE = "user_role"
+        private const val KEY_PHONE = "user_phone"
+        private const val KEY_DOB = "user_dob"
+        private const val KEY_PREFERRED_NAME = "user_preferred_name"
 
         @Volatile
         private var instance: SessionManager? = null

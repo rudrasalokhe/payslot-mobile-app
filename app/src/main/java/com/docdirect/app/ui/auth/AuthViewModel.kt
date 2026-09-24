@@ -28,6 +28,11 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun getCurrentUserRole(): UserRole = repository.getCurrentUserRole()
     fun getCurrentUserId(): String = repository.getCurrentUserId() ?: ""
     fun getCurrentUserName(): String = repository.getCurrentUserName()
+    fun getCurrentUserEmail(): String = repository.getCurrentUserEmail()
+    fun getCurrentUserPhone(): String = repository.getCurrentUserPhone()
+    fun getCurrentUserDob(): String = repository.getCurrentUserDob()
+    fun getCurrentUserPreferredName(): String = repository.getCurrentUserPreferredName()
+    fun saveUserDetails(phone: String, dob: String, preferredName: String) = repository.saveUserDetails(phone, dob, preferredName)
     fun logout() = repository.logout()
 
     fun login(

@@ -57,7 +57,12 @@ class AppRepository private constructor(context: Context) {
     fun isLoggedIn(): Boolean = sessionManager.isLoggedIn()
     fun getCurrentUserId(): String? = sessionManager.getUserId()
     fun getCurrentUserName(): String = sessionManager.getUserName()
+    fun getCurrentUserEmail(): String = sessionManager.getUserEmail()
+    fun getCurrentUserPhone(): String = sessionManager.getUserPhone()
+    fun getCurrentUserDob(): String = sessionManager.getUserDob()
+    fun getCurrentUserPreferredName(): String = sessionManager.getUserPreferredName()
     fun getCurrentUserRole(): UserRole = sessionManager.getUserRole()
+    fun saveUserDetails(phone: String, dob: String, preferredName: String) = sessionManager.saveUserDetails(phone, dob, preferredName)
 
     suspend fun registerUser(
         name: String,

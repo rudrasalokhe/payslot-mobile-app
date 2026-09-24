@@ -13,8 +13,17 @@ import kotlinx.coroutines.flow.*
 class PatientViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = AppRepository.getInstance(application)
-    val currentUserId = repository.getCurrentUserId() ?: "user_aarav_mehta"
-    val currentUserName = repository.getCurrentUserName()
+    private val _currentUserId = MutableStateFlow(repository.getCurrentUserId() ?: "")
+    val currentUserId: String get() = _currentUserId.value.ifBlank { repository.getCurrentUserId() ?: "" }
+    val currentUserName: String get() = repository.getCurrentUserName()
+    val currentUserEmail: String get() = repository.getCurrentUserEmail()
+    val currentUserPhone: String get() = repository.getCurrentUserPhone()
+    val currentUserDob: String get() = repository.getCurrentUserDob()
+    val currentUserPreferredName: String get() = repository.getCurrentUserPreferredName()
+
+    fun refreshUserSession() {
+        _currentUserId.value = repository.getCurrentUserId() ?: ""
+    }
 
     val doctors: StateFlow<List<DoctorProfile>> = repository.doctors.stateIn(
         scope = viewModelScope,
@@ -22,19 +31,28 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
         initialValue = emptyList()
     )
 
-    val appointments: StateFlow<List<Appointment>> = repository.getAppointmentsForPatient(currentUserId).stateIn(
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val appointments: StateFlow<List<Appointment>> = _currentUserId.flatMapLatest { uid ->
+        if (uid.isBlank()) flowOf(emptyList()) else repository.getAppointmentsForPatient(uid)
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
-    val records: StateFlow<List<RecordEntity>> = repository.getRecordsForPatient(currentUserId).stateIn(
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val records: StateFlow<List<RecordEntity>> = _currentUserId.flatMapLatest { uid ->
+        if (uid.isBlank()) flowOf(emptyList()) else repository.getRecordsForPatient(uid)
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
-    val familyMembers: StateFlow<List<FamilyMemberEntity>> = repository.getFamilyMembers(currentUserId).stateIn(
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val familyMembers: StateFlow<List<FamilyMemberEntity>> = _currentUserId.flatMapLatest { uid ->
+        if (uid.isBlank()) flowOf(emptyList()) else repository.getFamilyMembers(uid)
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -46,7 +64,10 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
         initialValue = emptyList()
     )
 
-    val notifications: StateFlow<List<NotificationEntity>> = repository.getNotificationsForUser(currentUserId).stateIn(
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val notifications: StateFlow<List<NotificationEntity>> = _currentUserId.flatMapLatest { uid ->
+        if (uid.isBlank()) flowOf(emptyList()) else repository.getNotificationsForUser(uid)
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()

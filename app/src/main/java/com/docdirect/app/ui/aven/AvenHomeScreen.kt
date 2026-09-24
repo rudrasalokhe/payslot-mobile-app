@@ -40,20 +40,6 @@ fun AvenHomeScreen(
     val appointments by patientViewModel.appointments.collectAsState()
 
     val nextAppointment = appointments.firstOrNull { it.status == AppointmentStatus.UPCOMING }
-        ?: Appointment(
-            id = "apt_aven_0925",
-            patientId = "user_aarav_mehta",
-            patientName = userName,
-            doctorId = "doc_mira_shah",
-            doctorName = "Dr Mira Shah",
-            doctorSpecialty = "Dermatologist",
-            appointmentDate = "25 Sep",
-            appointmentTime = "3:30 PM",
-            symptoms = "Follow-up for a skin concern. Discussing rash progression and barrier restoration.",
-            feePaid = 1249.0,
-            status = AppointmentStatus.UPCOMING,
-            transactionId = "AV-INV-0925-1042"
-        )
 
     Scaffold(
         containerColor = AvenBg,
@@ -133,8 +119,11 @@ fun AvenHomeScreen(
             // Welcome Text
             item {
                 Column {
+                    val greetingName = patientViewModel.currentUserPreferredName.ifBlank {
+                        userName.split(" ").firstOrNull() ?: "there"
+                    }
                     Text(
-                        text = "Good morning, ${userName.split(" ").firstOrNull() ?: "Aarav"}",
+                        text = "Good morning, $greetingName",
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
                         color = AvenInk
@@ -332,34 +321,135 @@ fun AvenHomeScreen(
                         color = AvenInk
                     )
 
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
-                            .clickable { onTabSelected("visits") },
-                        color = AvenWhite,
-                        shape = RoundedCornerShape(20.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                        shadowElevation = 2.dp
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                    if (nextAppointment != null) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable { onTabSelected("visits") },
+                            color = AvenWhite,
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            shadowElevation = 2.dp
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val initials = nextAppointment.doctorName
+                                        .replace("Dr ", "")
+                                        .split(" ")
+                                        .filter { it.isNotBlank() }
+                                        .mapNotNull { it.firstOrNull()?.uppercase() }
+                                        .take(2)
+                                        .joinToString("")
+                                        .ifBlank { "DR" }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(56.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(Color(0xFFD8E7D6)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = initials,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 20.sp,
+                                            color = AvenTeal
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(14.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = nextAppointment.doctorName,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            color = AvenInk
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "${nextAppointment.appointmentDate} • ${nextAppointment.appointmentTime} IST",
+                                            fontSize = 13.sp,
+                                            color = AvenMuted
+                                        )
+                                    }
+
+                                    Surface(
+                                        color = AvenMint,
+                                        shape = RoundedCornerShape(100.dp)
+                                    ) {
+                                        Text(
+                                            text = "Video visit",
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AvenTeal
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                // One-tap start Agora video call
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Button(
+                                        onClick = { onStartVideoCall(nextAppointment.id, nextAppointment.doctorName) },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                                        modifier = Modifier.weight(1.3f).height(46.dp)
+                                    ) {
+                                        Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp), tint = AvenWhite)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Join Video Call", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = { onOpenChat(nextAppointment.id) },
+                                        shape = RoundedCornerShape(12.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                                        modifier = Modifier.weight(1f).height(46.dp)
+                                    ) {
+                                        Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(16.dp), tint = AvenInk)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Chat", fontSize = 13.sp, color = AvenInk)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable { onOpenSearch() },
+                            color = AvenWhite,
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            shadowElevation = 1.dp
+                        ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Doctor Avatar Box
                                 Box(
                                     modifier = Modifier
-                                        .size(56.dp)
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(Color(0xFFD8E7D6)),
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(AvenMint),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "MS",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 20.sp,
-                                        color = AvenTeal
+                                    Icon(
+                                        imageVector = Icons.Default.EventAvailable,
+                                        contentDescription = null,
+                                        tint = AvenTeal,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
 
@@ -367,61 +457,25 @@ fun AvenHomeScreen(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = nextAppointment.doctorName,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
+                                        text = "Room for better care.",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = AvenInk
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = "${nextAppointment.appointmentDate} • ${nextAppointment.appointmentTime} IST",
-                                        fontSize = 13.sp,
+                                        text = "You don't have any upcoming visits.",
+                                        fontSize = 12.sp,
                                         color = AvenMuted
                                     )
                                 }
 
-                                Surface(
-                                    color = AvenMint,
-                                    shape = RoundedCornerShape(100.dp)
-                                ) {
-                                    Text(
-                                        text = "Video visit",
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = AvenTeal
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            // One-tap start Agora video call
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Button(
-                                    onClick = { onStartVideoCall(nextAppointment.id, nextAppointment.doctorName) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
-                                    modifier = Modifier.weight(1.3f).height(46.dp)
-                                ) {
-                                    Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp), tint = AvenWhite)
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Join Video Call", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
-                                }
-
-                                OutlinedButton(
-                                    onClick = { onOpenChat(nextAppointment.id) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                                    modifier = Modifier.weight(1f).height(46.dp)
-                                ) {
-                                    Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(16.dp), tint = AvenInk)
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Chat", fontSize = 13.sp, color = AvenInk)
-                                }
+                                Text(
+                                    text = "Book now",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AvenTeal
+                                )
                             }
                         }
                     }
