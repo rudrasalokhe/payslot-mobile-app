@@ -31,6 +31,7 @@ fun DoctorDashboardScreen(
     onNavigateToSlots: () -> Unit,
     onNavigateToAppointments: () -> Unit,
     onOpenChat: (appointmentId: String) -> Unit,
+    onStartVideoCall: (appointmentId: String, patientName: String) -> Unit,
     onSignOut: () -> Unit
 ) {
     val doctor by viewModel.doctorProfile.collectAsState()
@@ -283,7 +284,8 @@ fun DoctorDashboardScreen(
                         appointment = appointment,
                         onOpenChat = { onOpenChat(appointment.id) },
                         onIssuePrescription = { showPrescriptionDialog = appointment },
-                        onComplete = { viewModel.completeAppointment(appointment.id) }
+                        onComplete = { viewModel.completeAppointment(appointment.id) },
+                        onStartVideoCall = { onStartVideoCall(appointment.id, appointment.patientName) }
                     )
                 }
             }

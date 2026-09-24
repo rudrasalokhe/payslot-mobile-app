@@ -27,6 +27,7 @@ import com.docdirect.app.ui.theme.*
 fun AuraHomeScreen(
     userName: String = "Alex",
     onNavigateToClinicians: () -> Unit,
+    onNavigateToMyAppointments: () -> Unit = {},
     onNavigateToTelehealthCall: () -> Unit,
     onOpenChat: () -> Unit,
     onSignOut: () -> Unit
@@ -71,6 +72,9 @@ fun AuraHomeScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToMyAppointments) {
+                        Icon(Icons.Default.Event, contentDescription = "My Appointments", tint = AuraPrimary)
+                    }
                     IconButton(onClick = onOpenChat) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = AuraOnSurfaceVariant)
                     }
@@ -223,7 +227,7 @@ fun AuraHomeScreen(
                             }
 
                             Button(
-                                onClick = onNavigateToTelehealthCall,
+                                onClick = onNavigateToMyAppointments,
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = AuraPrimary),
                                 modifier = Modifier.weight(1f),

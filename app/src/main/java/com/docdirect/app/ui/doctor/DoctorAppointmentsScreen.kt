@@ -21,7 +21,8 @@ import com.docdirect.app.data.model.AppointmentStatus
 fun DoctorAppointmentsScreen(
     viewModel: DoctorViewModel,
     onNavigateBack: () -> Unit,
-    onOpenChat: (appointmentId: String) -> Unit
+    onOpenChat: (appointmentId: String) -> Unit,
+    onStartVideoCall: (appointmentId: String, patientName: String) -> Unit
 ) {
     val appointments by viewModel.appointments.collectAsState()
     var selectedFilter by remember { mutableStateOf("ALL") }
@@ -91,7 +92,8 @@ fun DoctorAppointmentsScreen(
                             appointment = appointment,
                             onOpenChat = { onOpenChat(appointment.id) },
                             onIssuePrescription = { showPrescriptionDialog = appointment },
-                            onComplete = { viewModel.completeAppointment(appointment.id) }
+                            onComplete = { viewModel.completeAppointment(appointment.id) },
+                            onStartVideoCall = { onStartVideoCall(appointment.id, appointment.patientName) }
                         )
                     }
                     item { Spacer(modifier = Modifier.height(24.dp)) }

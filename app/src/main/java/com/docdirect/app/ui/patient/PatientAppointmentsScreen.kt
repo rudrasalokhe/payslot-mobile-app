@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +24,8 @@ import com.docdirect.app.ui.theme.TealPrimary
 fun PatientAppointmentsScreen(
     viewModel: PatientViewModel,
     onNavigateBack: () -> Unit,
-    onOpenChat: (appointmentId: String) -> Unit
+    onOpenChat: (appointmentId: String) -> Unit,
+    onStartVideoCall: (appointmentId: String, doctorName: String) -> Unit
 ) {
     val appointments by viewModel.appointments.collectAsState()
 
@@ -56,7 +58,8 @@ fun PatientAppointmentsScreen(
                 items(appointments) { appointment ->
                     PatientAppointmentItemCard(
                         appointment = appointment,
-                        onOpenChat = { onOpenChat(appointment.id) }
+                        onOpenChat = { onOpenChat(appointment.id) },
+                        onStartVideoCall = { onStartVideoCall(appointment.id, appointment.doctorName) }
                     )
                 }
 
@@ -69,7 +72,8 @@ fun PatientAppointmentsScreen(
 @Composable
 fun PatientAppointmentItemCard(
     appointment: Appointment,
-    onOpenChat: () -> Unit
+    onOpenChat: () -> Unit,
+    onStartVideoCall: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -154,15 +158,28 @@ fun PatientAppointmentItemCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Video Call button
             Button(
-                onClick = onOpenChat,
+                onClick = onStartVideoCall,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TealPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
             ) {
-                Icon(Icons.Default.Chat, contentDescription = null)
+                Icon(Icons.Default.Videocam, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Chat Online with Doctor")
+                Text("Join Video Call")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = onOpenChat,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Chat, contentDescription = null, tint = TealPrimary)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Chat Online with Doctor", color = TealPrimary)
             }
         }
     }

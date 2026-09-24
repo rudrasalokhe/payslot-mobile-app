@@ -23,7 +23,8 @@ fun DoctorAppointmentCard(
     appointment: Appointment,
     onOpenChat: () -> Unit,
     onIssuePrescription: () -> Unit,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    onStartVideoCall: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -139,6 +140,21 @@ fun DoctorAppointmentCard(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            // Video Call button (full width, prominent)
+            if (onStartVideoCall != null) {
+                Button(
+                    onClick = onStartVideoCall,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
+                ) {
+                    Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Start Video Call")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -26,6 +26,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun isLoggedIn(): Boolean = repository.isLoggedIn()
     fun getCurrentUserRole(): UserRole = repository.getCurrentUserRole()
+    fun getCurrentUserId(): String = repository.getCurrentUserId() ?: ""
+    fun getCurrentUserName(): String = repository.getCurrentUserName()
     fun logout() = repository.logout()
 
     fun login(

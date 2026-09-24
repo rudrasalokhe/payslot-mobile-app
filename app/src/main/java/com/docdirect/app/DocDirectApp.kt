@@ -16,6 +16,7 @@ import com.docdirect.app.ui.auth.ClinicalAccessAuthScreen
 import com.docdirect.app.ui.auth.DoctorSignupScreen
 import com.docdirect.app.ui.chat.ChatViewModel
 import com.docdirect.app.ui.chat.OnlineChatScreen
+import com.docdirect.app.ui.consultation.AgoraVideoCallScreen
 import com.docdirect.app.ui.consultation.TelehealthConsultationScreen
 import com.docdirect.app.ui.doctor.DoctorAppointmentsScreen
 import com.docdirect.app.ui.doctor.DoctorDashboardScreen
@@ -23,6 +24,8 @@ import com.docdirect.app.ui.doctor.DoctorViewModel
 import com.docdirect.app.ui.doctor.SlotManagerScreen
 import com.docdirect.app.ui.patient.*
 import com.docdirect.app.ui.theme.DocDirectTheme
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +80,8 @@ fun DocDirectApp() {
                 AuraHomeScreen(
                     userName = patientViewModel.currentUserName.ifBlank { "Alex" },
                     onNavigateToClinicians = { navController.navigate("clinicians") },
-                    onNavigateToTelehealthCall = { navController.navigate("telehealth_call/Dr. Julian Vance, MD") },
+                    onNavigateToMyAppointments = { navController.navigate("patient_appointments") },
+                    onNavigateToTelehealthCall = { navController.navigate("patient_appointments") },
                     onOpenChat = { navController.navigate("chat/general_care") },
                     onSignOut = {
                         authViewModel.logout()
@@ -99,7 +103,7 @@ fun DocDirectApp() {
                 )
             }
 
-            // Screen 2: Telehealth Video Consultation & Biometrics HUD
+            // Screen 2: Telehealth Video Consultation & Biometrics HUD (UI mockup)
             composable(
                 "telehealth_call/{doctorName}",
                 arguments = listOf(navArgument("doctorName") { type = NavType.StringType })
@@ -113,6 +117,31 @@ fun DocDirectApp() {
                 )
             }
 
+            // ===== AGORA VIDEO CALL =====
+            composable(
+                "video_call/{appointmentId}/{remoteUserName}",
+                arguments = listOf(
+                    navArgument("appointmentId") { type = NavType.StringType },
+                    navArgument("remoteUserName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val aptId = backStackEntry.arguments?.getString("appointmentId") ?: ""
+                val remoteNameEncoded = backStackEntry.arguments?.getString("remoteUserName") ?: ""
+                val remoteName = try { URLDecoder.decode(remoteNameEncoded, "UTF-8") } catch (e: Exception) { remoteNameEncoded }
+                val isDoctor = authViewModel.getCurrentUserRole() == UserRole.DOCTOR
+                val localUserId = authViewModel.getCurrentUserId()
+                val localUserName = authViewModel.getCurrentUserName()
+
+                AgoraVideoCallScreen(
+                    appointmentId = aptId,
+                    localUserId = localUserId,
+                    localUserName = localUserName,
+                    remoteUserName = remoteName,
+                    isDoctor = isDoctor,
+                    onCallEnded = { navController.popBackStack() }
+                )
+            }
+
             // Doctor Portal Screens
             composable("doctor_dashboard") {
                 DoctorDashboardScreen(
@@ -120,6 +149,10 @@ fun DocDirectApp() {
                     onNavigateToSlots = { navController.navigate("doctor_slots") },
                     onNavigateToAppointments = { navController.navigate("doctor_appointments") },
                     onOpenChat = { aptId -> navController.navigate("chat/$aptId") },
+                    onStartVideoCall = { aptId, patientName ->
+                        val encodedName = URLEncoder.encode(patientName, "UTF-8")
+                        navController.navigate("video_call/$aptId/$encodedName")
+                    },
                     onSignOut = {
                         authViewModel.logout()
                         navController.navigate("clinical_auth") {
@@ -140,7 +173,11 @@ fun DocDirectApp() {
                 DoctorAppointmentsScreen(
                     viewModel = doctorViewModel,
                     onNavigateBack = { navController.popBackStack() },
-                    onOpenChat = { aptId -> navController.navigate("chat/$aptId") }
+                    onOpenChat = { aptId -> navController.navigate("chat/$aptId") },
+                    onStartVideoCall = { aptId, patientName ->
+                        val encodedName = URLEncoder.encode(patientName, "UTF-8")
+                        navController.navigate("video_call/$aptId/$encodedName")
+                    }
                 )
             }
 
@@ -178,7 +215,7 @@ fun DocDirectApp() {
                     viewModel = patientViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onBookingSuccess = { aptId ->
-                        navController.navigate("telehealth_call/Dr. Julian Vance, MD") {
+                        navController.navigate("patient_appointments") {
                             popUpTo("aura_home")
                         }
                     }
@@ -195,6 +232,19 @@ fun DocDirectApp() {
                     appointmentId = aptId,
                     viewModel = chatViewModel,
                     onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            // Patient Appointments
+            composable("patient_appointments") {
+                PatientAppointmentsScreen(
+                    viewModel = patientViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenChat = { aptId -> navController.navigate("chat/$aptId") },
+                    onStartVideoCall = { aptId, doctorName ->
+                        val encodedName = URLEncoder.encode(doctorName, "UTF-8")
+                        navController.navigate("video_call/$aptId/$encodedName")
+                    }
                 )
             }
         }
