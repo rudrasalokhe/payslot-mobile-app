@@ -19,36 +19,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.docdirect.app.data.local.entity.RecordEntity
+import com.docdirect.app.ui.patient.PatientViewModel
 import com.docdirect.app.ui.theme.*
-
-data class HealthRecordItem(
-    val id: String,
-    val title: String,
-    val date: String,
-    val category: String,
-    val fileSize: String,
-    val isSharedWithDoctor: Boolean = true
-)
+import kotlinx.coroutines.launch
 
 @Composable
 fun AvenRecordsScreen(
+    patientViewModel: PatientViewModel,
     onTabSelected: (String) -> Unit
 ) {
-    var recordsList by remember {
-        mutableStateOf(
-            listOf(
-                HealthRecordItem("rec_1", "Blood-test-report.pdf", "18 Sep 2026", "Lab report", "2.4 MB", true),
-                HealthRecordItem("rec_2", "Dermatology visit summary", "25 Sep 2026", "Consultation note", "1.1 MB", true),
-                HealthRecordItem("rec_3", "Lipid Profile & HbA1c.pdf", "12 Aug 2026", "Diagnostic panel", "3.2 MB", false),
-                HealthRecordItem("rec_4", "Vaccination Certificate.pdf", "05 Jan 2026", "Immunization", "850 KB", false)
-            )
-        )
-    }
+    val coroutineScope = rememberCoroutineScope()
+    val recordsList by patientViewModel.records.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var showUploadModal by remember { mutableStateOf(false) }
-    var showShareModal by remember { mutableStateOf<HealthRecordItem?>(null) }
-    var recordDetailModal by remember { mutableStateOf<HealthRecordItem?>(null) }
+    var showShareModal by remember { mutableStateOf<RecordEntity?>(null) }
+    var recordDetailModal by remember { mutableStateOf<RecordEntity?>(null) }
 
     val filteredRecords = remember(recordsList, searchQuery) {
         if (searchQuery.isBlank()) recordsList
@@ -172,7 +159,7 @@ fun AvenRecordsScreen(
 
             item {
                 Text(
-                    text = "${filteredRecords.size} records",
+                    text = "${filteredRecords.size} records saved in database",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = AvenMuted
@@ -252,7 +239,7 @@ fun AvenRecordsScreen(
         }
     }
 
-    // Upload Modal
+    // Upload Modal (Saves to Room SQLite Database!)
     if (showUploadModal) {
         var uploadTitle by remember { mutableStateOf("") }
         var uploadCategory by remember { mutableStateOf("Lab report") }
@@ -289,17 +276,11 @@ fun AvenRecordsScreen(
                 Button(
                     onClick = {
                         if (uploadTitle.isNotBlank()) {
-                            recordsList = listOf(
-                                HealthRecordItem(
-                                    id = "rec_${System.currentTimeMillis()}",
-                                    title = "$uploadTitle.pdf",
-                                    date = "Today",
-                                    category = uploadCategory,
-                                    fileSize = "1.8 MB",
-                                    isSharedWithDoctor = true
-                                )
-                            ) + recordsList
-                            showUploadModal = false
+                            coroutineScope.launch {
+                                val filename = if (uploadTitle.endsWith(".pdf")) uploadTitle else "$uploadTitle.pdf"
+                                patientViewModel.addRecord(filename, uploadCategory, "1.8 MB")
+                                showUploadModal = false
+                            }
                         }
                     },
                     enabled = uploadTitle.isNotBlank(),
@@ -343,14 +324,24 @@ fun AvenRecordsScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { showShareModal = null },
+                    onClick = {
+                        coroutineScope.launch {
+                            patientViewModel.updateRecordSharing(record.id, true)
+                            showShareModal = null
+                        }
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)
                 ) {
-                    Text("Update Access")
+                    Text("Grant Access")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showShareModal = null }) {
+                TextButton(onClick = {
+                    coroutineScope.launch {
+                        patientViewModel.updateRecordSharing(record.id, false)
+                        showShareModal = null
+                    }
+                }) {
                     Text("Revoke Access", color = AvenRed)
                 }
             }
@@ -367,7 +358,7 @@ fun AvenRecordsScreen(
                     Text("Category: ${record.category}", fontSize = 13.sp, color = AvenInk)
                     Text("Date added: ${record.date}", fontSize = 13.sp, color = AvenInk)
                     Text("File size: ${record.fileSize}", fontSize = 13.sp, color = AvenMuted)
-                    Text("Patient: Aarav Mehta", fontSize = 13.sp, color = AvenMuted)
+                    Text("Status: ${if (record.isSharedWithDoctor) "Shared with Dr Mira Shah" else "Private (vault only)"}", fontSize = 13.sp, color = AvenTeal)
                     Spacer(modifier = Modifier.height(6.dp))
                     Surface(
                         color = AvenSoft,
@@ -375,7 +366,7 @@ fun AvenRecordsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Verified cryptographic hash: SHA256:7f9a...3b21. Storage encrypted at rest.",
+                            text = "Verified cryptographic hash: SHA256:7f9a...3b21. Storage encrypted at rest in local Room SQLite DB.",
                             modifier = Modifier.padding(10.dp),
                             fontSize = 11.sp,
                             color = AvenMuted

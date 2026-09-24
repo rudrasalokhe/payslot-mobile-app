@@ -3,6 +3,7 @@ package com.docdirect.app.ui.patient
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.docdirect.app.data.local.entity.*
 import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.DoctorProfile
 import com.docdirect.app.data.model.TimeSlot
@@ -12,7 +13,7 @@ import kotlinx.coroutines.flow.*
 class PatientViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = AppRepository.getInstance(application)
-    val currentUserId = repository.getCurrentUserId() ?: ""
+    val currentUserId = repository.getCurrentUserId() ?: "user_aarav_mehta"
     val currentUserName = repository.getCurrentUserName()
 
     val doctors: StateFlow<List<DoctorProfile>> = repository.doctors.stateIn(
@@ -22,6 +23,30 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
     )
 
     val appointments: StateFlow<List<Appointment>> = repository.getAppointmentsForPatient(currentUserId).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val records: StateFlow<List<RecordEntity>> = repository.getRecordsForPatient(currentUserId).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val familyMembers: StateFlow<List<FamilyMemberEntity>> = repository.getFamilyMembers(currentUserId).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val invoices: StateFlow<List<InvoiceEntity>> = repository.getAllInvoices().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val notifications: StateFlow<List<NotificationEntity>> = repository.getNotificationsForUser(currentUserId).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -71,18 +96,29 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
         symptoms: String,
         fee: Double
     ): Appointment {
-        return repository.bookAppointment(
+        val apt = repository.bookAppointment(
             doctorId = doctorId,
             doctorName = doctorName,
             doctorSpecialty = doctorSpecialty,
             patientId = currentUserId,
-            patientName = if (currentUserName.isNotBlank()) currentUserName else "Patient",
+            patientName = if (currentUserName.isNotBlank()) currentUserName else "Aarav Mehta",
             slotId = slot.id,
             date = slot.date,
             time = slot.time,
             symptoms = symptoms,
             fee = fee
         )
+        // Also automatically create the invoice in database
+        repository.createInvoice(
+            appointmentId = apt.id,
+            patientName = apt.patientName,
+            doctorName = apt.doctorName,
+            specialty = apt.doctorSpecialty,
+            fee = fee - 49.0,
+            platformFee = 49.0,
+            paymentMethod = "UPI (Google Pay)"
+        )
+        return apt
     }
 
     suspend fun rescheduleAppointment(appointmentId: String, newDate: String, newTime: String) {
@@ -91,5 +127,33 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
 
     suspend fun cancelAppointment(appointmentId: String) {
         repository.cancelAppointment(appointmentId)
+    }
+
+    suspend fun addRecord(title: String, category: String, fileSize: String) {
+        repository.addRecord(title, category, fileSize, currentUserId)
+    }
+
+    suspend fun updateRecordSharing(recordId: String, isShared: Boolean) {
+        repository.updateRecordSharing(recordId, isShared)
+    }
+
+    suspend fun deleteRecord(recordId: String) {
+        repository.deleteRecord(recordId)
+    }
+
+    suspend fun addFamilyMember(name: String, relationship: String, age: Int, gender: String, dob: String) {
+        repository.addFamilyMember(currentUserId, name, relationship, age, gender, dob)
+    }
+
+    fun getReviewsForDoctor(doctorId: String): Flow<List<ReviewEntity>> {
+        return repository.getReviewsForDoctor(doctorId)
+    }
+
+    suspend fun addReview(doctorId: String, patientName: String, rating: Int, text: String) {
+        repository.addReview(doctorId, patientName, rating, text)
+    }
+
+    suspend fun markNotificationRead(id: String) {
+        repository.markNotificationRead(id)
     }
 }

@@ -47,6 +47,7 @@ fun AvenDoctorProfileScreen(
     )
 
     var selectedMode by remember { mutableStateOf("video") }
+    val reviews by patientViewModel.getReviewsForDoctor(doctor.id).collectAsState(initial = emptyList())
 
     Scaffold(
         containerColor = AvenBg,
@@ -451,48 +452,34 @@ fun AvenDoctorProfileScreen(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // Review 1 (Rhea P.)
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Rhea P.", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AvenInk)
-                                Text("★ ★ ★ ★ ★", color = AvenAmber, fontSize = 12.sp)
+                        if (reviews.isNotEmpty()) {
+                            reviews.forEachIndexed { index, rev ->
+                                Column {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(rev.patientName, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AvenInk)
+                                        Text("★".repeat(rev.rating), color = AvenAmber, fontSize = 12.sp)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "“${rev.reviewText}”",
+                                        fontSize = 13.sp,
+                                        color = AvenMuted,
+                                        lineHeight = 18.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text("${rev.visitType} • ${rev.date}", fontSize = 11.sp, color = AvenLine)
+                                }
+                                if (index < reviews.size - 1) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    HorizontalDivider(color = AvenLine.copy(alpha = 0.5f))
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "“I felt listened to and had time to ask my questions. The treatment protocol worked wonders within three weeks.”",
-                                fontSize = 13.sp,
-                                color = AvenMuted,
-                                lineHeight = 18.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text("Verified video visit • 14 Sep 2026", fontSize = 11.sp, color = AvenLine)
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Divider(color = AvenLine.copy(alpha = 0.5f))
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Review 2 (Arjun S.)
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Arjun S.", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AvenInk)
-                                Text("★ ★ ★ ★ ★", color = AvenAmber, fontSize = 12.sp)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "“Very clear explanation of the prescription and follow-up care. Didn't have to wait in a crowded clinic.”",
-                                fontSize = 13.sp,
-                                color = AvenMuted,
-                                lineHeight = 18.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text("Verified video visit • 2 Sep 2026", fontSize = 11.sp, color = AvenLine)
+                        } else {
+                            Text("No reviews yet for this clinician.", fontSize = 13.sp, color = AvenMuted)
                         }
                     }
                 }

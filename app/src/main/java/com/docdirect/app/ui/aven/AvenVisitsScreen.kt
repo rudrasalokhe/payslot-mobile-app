@@ -484,7 +484,17 @@ fun AvenVisitsScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { showRatingDialog = null },
+                    onClick = {
+                        coroutineScope.launch {
+                            patientViewModel.addReview(
+                                doctorId = apt.doctorId,
+                                patientName = apt.patientName,
+                                rating = rating,
+                                text = reviewText
+                            )
+                            showRatingDialog = null
+                        }
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)
                 ) {
                     Text("Submit feedback")

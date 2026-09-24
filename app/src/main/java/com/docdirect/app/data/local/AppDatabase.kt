@@ -4,11 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import com.docdirect.app.data.local.dao.AppointmentDao
-import com.docdirect.app.data.local.dao.ChatDao
-import com.docdirect.app.data.local.dao.DoctorDao
-import com.docdirect.app.data.local.dao.UserDao
+import com.docdirect.app.data.local.dao.*
 import com.docdirect.app.data.local.entity.*
 
 @Database(
@@ -17,9 +13,14 @@ import com.docdirect.app.data.local.entity.*
         DoctorEntity::class,
         SlotEntity::class,
         AppointmentEntity::class,
-        ChatMessageEntity::class
+        ChatMessageEntity::class,
+        RecordEntity::class,
+        FamilyMemberEntity::class,
+        InvoiceEntity::class,
+        NotificationEntity::class,
+        ReviewEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -28,6 +29,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun doctorDao(): DoctorDao
     abstract fun appointmentDao(): AppointmentDao
     abstract fun chatDao(): ChatDao
+    abstract fun recordDao(): RecordDao
+    abstract fun familyDao(): FamilyDao
+    abstract fun invoiceDao(): InvoiceDao
+    abstract fun notificationDao(): NotificationDao
+    abstract fun reviewDao(): ReviewDao
 
     companion object {
         @Volatile

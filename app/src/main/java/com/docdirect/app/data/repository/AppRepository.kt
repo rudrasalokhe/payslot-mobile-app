@@ -18,6 +18,11 @@ class AppRepository private constructor(context: Context) {
     private val doctorDao = db.doctorDao()
     private val appointmentDao = db.appointmentDao()
     private val chatDao = db.chatDao()
+    private val recordDao = db.recordDao()
+    private val familyDao = db.familyDao()
+    private val invoiceDao = db.invoiceDao()
+    private val notificationDao = db.notificationDao()
+    private val reviewDao = db.reviewDao()
     private val sessionManager = SessionManager.getInstance(context)
 
     val currentRole: StateFlow<UserRole> = MutableStateFlow(sessionManager.getUserRole()).asStateFlow()
@@ -365,7 +370,122 @@ class AppRepository private constructor(context: Context) {
             )
             appointmentDao.insertAppointment(initialApt)
         }
+
+        if (recordDao.getRecordCount() == 0) {
+            val patientId = getCurrentUserId() ?: "user_aarav_mehta"
+            recordDao.insertRecord(RecordEntity("rec_1", patientId, "Blood-test-report.pdf", "Lab report", "2.4 MB", "18 Sep 2026", true, "Dr Mira Shah", "27 Sep 2026"))
+            recordDao.insertRecord(RecordEntity("rec_2", patientId, "Dermatology visit summary", "Consultation note", "1.1 MB", "25 Sep 2026", true, "Dr Mira Shah", "27 Sep 2026"))
+            recordDao.insertRecord(RecordEntity("rec_3", patientId, "Lipid Profile & HbA1c.pdf", "Diagnostic panel", "3.2 MB", "12 Aug 2026", false, "", ""))
+            recordDao.insertRecord(RecordEntity("rec_4", patientId, "Vaccination Certificate.pdf", "Immunization", "850 KB", "05 Jan 2026", false, "", ""))
+        }
+
+        if (familyDao.getFamilyCount() == 0) {
+            val patientId = getCurrentUserId() ?: "user_aarav_mehta"
+            familyDao.insertFamilyMember(FamilyMemberEntity("fam_1", patientId, "Nisha Mehta", "Parent", 56, "Female", "12 February 1970"))
+        }
+
+        if (invoiceDao.getInvoiceCount() == 0) {
+            invoiceDao.insertInvoice(
+                InvoiceEntity(
+                    id = "AV-INV-0925-1042",
+                    appointmentId = "apt_aven_0925",
+                    patientName = "Aarav Mehta",
+                    doctorName = "Dr Mira Shah",
+                    specialty = "Dermatologist",
+                    consultationFee = 1200.0,
+                    platformFee = 49.0,
+                    totalAmount = 1249.0,
+                    paymentMethod = "UPI (Google Pay)",
+                    status = "PAID",
+                    date = "25 Sep 2026"
+                )
+            )
+        }
+
+        if (reviewDao.getReviewCount() == 0) {
+            reviewDao.insertReview(ReviewEntity("rev_1", "doc_mira_shah", "Rhea P.", 5, "I felt listened to and had time to ask my questions. The treatment protocol worked wonders within three weeks.", "Verified video visit", "14 Sep 2026"))
+            reviewDao.insertReview(ReviewEntity("rev_2", "doc_mira_shah", "Arjun S.", 5, "Very clear explanation of the prescription and follow-up care. Didn't have to wait in a crowded clinic.", "Verified video visit", "02 Sep 2026"))
+            reviewDao.insertReview(ReviewEntity("rev_3", "doc_mira_shah", "Tanya M.", 5, "Dr Shah answered all my skin barrier questions patiently.", "Verified in-person visit", "28 Aug 2026"))
+        }
+
+        if (notificationDao.getNotificationCount() == 0) {
+            val patientId = getCurrentUserId() ?: "user_aarav_mehta"
+            notificationDao.insertNotification(NotificationEntity("notif_1", patientId, "Your appointment is tomorrow", "Video consultation with Dr Mira Shah on 25 Sep at 3:30 PM IST", "Today, 9:00 AM", false, "aven_visits"))
+            notificationDao.insertNotification(NotificationEntity("notif_2", patientId, "Blood-test-report.pdf shared", "Access granted to Dr Mira Shah until 27 Sep 2026", "Yesterday, 4:30 PM", true, "aven_records"))
+            notificationDao.insertNotification(NotificationEntity("notif_3", patientId, "Booking confirmed", "Receipt AV-INV-0925-1042 generated for ₹1,249", "24 Sep, 10:15 AM", true, "aven_profile"))
+        }
     }
+
+    // Records Flow
+    fun getRecordsForPatient(patientId: String): Flow<List<RecordEntity>> = recordDao.getRecordsForPatient(patientId)
+    suspend fun addRecord(title: String, category: String, fileSize: String, patientId: String) {
+        val record = RecordEntity(
+            id = "rec_${System.currentTimeMillis()}",
+            patientId = patientId,
+            title = title,
+            category = category,
+            fileSize = fileSize,
+            date = "Today",
+            isSharedWithDoctor = true
+        )
+        recordDao.insertRecord(record)
+    }
+    suspend fun updateRecordSharing(recordId: String, isShared: Boolean) = recordDao.updateSharingStatus(recordId, isShared)
+    suspend fun deleteRecord(recordId: String) = recordDao.deleteRecord(recordId)
+
+    // Family Members Flow
+    fun getFamilyMembers(patientId: String): Flow<List<FamilyMemberEntity>> = familyDao.getFamilyMembers(patientId)
+    suspend fun addFamilyMember(patientId: String, name: String, relationship: String, age: Int, gender: String, dob: String) {
+        val member = FamilyMemberEntity(
+            id = "fam_${System.currentTimeMillis()}",
+            patientId = patientId,
+            name = name,
+            relationship = relationship,
+            age = age,
+            gender = gender,
+            dob = dob
+        )
+        familyDao.insertFamilyMember(member)
+    }
+
+    // Invoices Flow
+    fun getAllInvoices(): Flow<List<InvoiceEntity>> = invoiceDao.getAllInvoices()
+    fun getInvoiceForAppointment(appointmentId: String): Flow<InvoiceEntity?> = invoiceDao.getInvoiceForAppointment(appointmentId)
+    suspend fun createInvoice(appointmentId: String, patientName: String, doctorName: String, specialty: String, fee: Double, platformFee: Double, paymentMethod: String) {
+        val invoice = InvoiceEntity(
+            id = "AV-INV-${System.currentTimeMillis().toString().takeLast(8)}",
+            appointmentId = appointmentId,
+            patientName = patientName,
+            doctorName = doctorName,
+            specialty = specialty,
+            consultationFee = fee,
+            platformFee = platformFee,
+            totalAmount = fee + platformFee,
+            paymentMethod = paymentMethod,
+            status = "PAID",
+            date = "Today"
+        )
+        invoiceDao.insertInvoice(invoice)
+    }
+
+    // Reviews Flow
+    fun getReviewsForDoctor(doctorId: String): Flow<List<ReviewEntity>> = reviewDao.getReviewsForDoctor(doctorId)
+    suspend fun addReview(doctorId: String, patientName: String, rating: Int, text: String, visitType: String = "Verified video visit") {
+        val review = ReviewEntity(
+            id = "rev_${System.currentTimeMillis()}",
+            doctorId = doctorId,
+            patientName = patientName,
+            rating = rating,
+            reviewText = text,
+            visitType = visitType,
+            date = "Today"
+        )
+        reviewDao.insertReview(review)
+    }
+
+    // Notifications Flow
+    fun getNotificationsForUser(userId: String): Flow<List<NotificationEntity>> = notificationDao.getNotificationsForUser(userId)
+    suspend fun markNotificationRead(id: String) = notificationDao.markAsRead(id)
 
     // Chat Flow
     fun getMessagesForAppointment(appointmentId: String): Flow<List<ChatMessage>> {

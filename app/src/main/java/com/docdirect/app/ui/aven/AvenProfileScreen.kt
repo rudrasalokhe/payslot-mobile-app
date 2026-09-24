@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,18 +22,28 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.docdirect.app.ui.patient.PatientViewModel
 import com.docdirect.app.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun AvenProfileScreen(
+    patientViewModel: PatientViewModel,
     onTabSelected: (String) -> Unit,
     onNavigateToClinicianWorkspace: () -> Unit,
     onNavigateToOperations: () -> Unit,
     onSignOut: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val familyMembers by patientViewModel.familyMembers.collectAsState()
+    val invoices by patientViewModel.invoices.collectAsState()
+    val notifications by patientViewModel.notifications.collectAsState()
+
     var showFamilyModal by remember { mutableStateOf(false) }
+    var showAddFamilyModal by remember { mutableStateOf(false) }
     var showInvoiceModal by remember { mutableStateOf(false) }
     var showDeviceCheckModal by remember { mutableStateOf(false) }
+    var showNotificationsModal by remember { mutableStateOf(false) }
     var showSignOutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -45,17 +56,44 @@ fun AvenProfileScreen(
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
-                Text(
-                    text = "You",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AvenInk
-                )
-                Text(
-                    text = "Account settings, family profiles & preferences.",
-                    fontSize = 13.sp,
-                    color = AvenMuted
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "You",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AvenInk
+                        )
+                        Text(
+                            text = "Account settings, family profiles & preferences.",
+                            fontSize = 13.sp,
+                            color = AvenMuted
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { showNotificationsModal = true },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(AvenWhite)
+                            .border(1.dp, AvenLine, CircleShape)
+                    ) {
+                        BadgedBox(
+                            badge = {
+                                if (notifications.any { !it.isRead }) {
+                                    Badge(containerColor = AvenRed)
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = AvenInk, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
             }
         },
         bottomBar = {
@@ -159,9 +197,9 @@ fun AvenProfileScreen(
                 }
             }
 
-            // Quick Preferences Section
+            // Quick Preferences Section (Backed by SQLite DB)
             item {
-                Text("Care Settings", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AvenInk)
+                Text("Care Settings & Records", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AvenInk)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Surface(
@@ -172,25 +210,25 @@ fun AvenProfileScreen(
                     Column {
                         ProfileMenuRow(
                             title = "Family profiles",
-                            subtitle = "Nisha Mehta (Parent)",
+                            subtitle = "${familyMembers.size} member(s) registered in database",
                             icon = Icons.Default.Groups,
                             onClick = { showFamilyModal = true }
                         )
-                        Divider(color = AvenLine.copy(alpha = 0.6f))
+                        HorizontalDivider(color = AvenLine.copy(alpha = 0.6f))
                         ProfileMenuRow(
                             title = "Payments & receipts",
-                            subtitle = "Invoice AV-INV-0925-1042 (₹1,249)",
+                            subtitle = "${invoices.size} invoice(s) • Total ₹${invoices.sumOf { it.totalAmount }.toInt()}",
                             icon = Icons.Default.ReceiptLong,
                             onClick = { showInvoiceModal = true }
                         )
-                        Divider(color = AvenLine.copy(alpha = 0.6f))
+                        HorizontalDivider(color = AvenLine.copy(alpha = 0.6f))
                         ProfileMenuRow(
                             title = "Device test (Video & Audio)",
                             subtitle = "Check camera and microphone before visits",
                             icon = Icons.Default.Videocam,
                             onClick = { showDeviceCheckModal = true }
                         )
-                        Divider(color = AvenLine.copy(alpha = 0.6f))
+                        HorizontalDivider(color = AvenLine.copy(alpha = 0.6f))
                         ProfileMenuRow(
                             title = "Active sessions",
                             subtitle = "This phone (Android) • Chrome on Windows",
@@ -230,21 +268,37 @@ fun AvenProfileScreen(
     if (showFamilyModal) {
         AlertDialog(
             onDismissRequest = { showFamilyModal = false },
-            title = { Text("Family Profiles", fontWeight = FontWeight.Bold, color = AvenInk) },
+            title = { Text("Family Profiles (${familyMembers.size})", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Book appointments on behalf of someone you care for:", fontSize = 13.sp, color = AvenMuted)
-                    Surface(color = AvenMint, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(AvenTeal), contentAlignment = Alignment.Center) {
-                                Text("NM", color = AvenWhite, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text("Nisha Mehta", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AvenInk)
-                                Text("Parent • 56 years • Female", fontSize = 12.sp, color = AvenMuted)
+
+                    familyMembers.forEach { member ->
+                        Surface(color = AvenMint, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(AvenTeal), contentAlignment = Alignment.Center) {
+                                    Text(member.name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.joinToString(""), color = AvenWhite, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(member.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AvenInk)
+                                    Text("${member.relationship} • ${member.age} years • ${member.gender}", fontSize = 12.sp, color = AvenMuted)
+                                }
                             }
                         }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            showFamilyModal = false
+                            showAddFamilyModal = true
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("+ Add Family Member")
                     }
                 }
             },
@@ -256,35 +310,145 @@ fun AvenProfileScreen(
         )
     }
 
+    // Add Family Member Modal (Saves to DB!)
+    if (showAddFamilyModal) {
+        var memberName by remember { mutableStateOf("") }
+        var memberRel by remember { mutableStateOf("Parent") }
+        var memberAge by remember { mutableStateOf("56") }
+
+        AlertDialog(
+            onDismissRequest = { showAddFamilyModal = false },
+            title = { Text("Add Family Member", fontWeight = FontWeight.Bold, color = AvenInk) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = memberName,
+                        onValueChange = { memberName = it },
+                        label = { Text("Full Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = memberRel,
+                        onValueChange = { memberRel = it },
+                        label = { Text("Relationship (e.g. Parent, Child, Spouse)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = memberAge,
+                        onValueChange = { memberAge = it },
+                        label = { Text("Age") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (memberName.isNotBlank()) {
+                            coroutineScope.launch {
+                                patientViewModel.addFamilyMember(
+                                    name = memberName,
+                                    relationship = memberRel,
+                                    age = memberAge.toIntOrNull() ?: 30,
+                                    gender = "Unspecified",
+                                    dob = "01 Jan 1990"
+                                )
+                                showAddFamilyModal = false
+                                showFamilyModal = true
+                            }
+                        }
+                    },
+                    enabled = memberName.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)
+                ) {
+                    Text("Save to DB")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddFamilyModal = false }) {
+                    Text("Cancel", color = AvenMuted)
+                }
+            }
+        )
+    }
+
     // Invoice Modal
     if (showInvoiceModal) {
         AlertDialog(
             onDismissRequest = { showInvoiceModal = false },
-            title = { Text("Receipt AV-INV-0925-1042", fontWeight = FontWeight.Bold, color = AvenInk) },
+            title = { Text("Receipts & Invoices (${invoices.size})", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Patient: Aarav Mehta", fontSize = 13.sp, color = AvenInk)
-                    Text("Clinician: Dr Mira Shah (Dermatology)", fontSize = 13.sp, color = AvenInk)
-                    Text("Date: 25 September 2026", fontSize = 13.sp, color = AvenMuted)
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Doctor Consultation", color = AvenMuted, fontSize = 13.sp)
-                        Text("₹1,200", fontWeight = FontWeight.Bold, color = AvenInk, fontSize = 13.sp)
-                    }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Platform Fee & GST", color = AvenMuted, fontSize = 13.sp)
-                        Text("₹49", fontWeight = FontWeight.Bold, color = AvenInk, fontSize = 13.sp)
-                    }
-                    Divider(color = AvenLine)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Total Paid", fontWeight = FontWeight.Bold, color = AvenInk, fontSize = 15.sp)
-                        Text("₹1,249", fontWeight = FontWeight.Bold, color = AvenTeal, fontSize = 16.sp)
+                LazyColumn(modifier = Modifier.heightIn(max = 350.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(invoices) { inv ->
+                        Surface(
+                            color = AvenWhite,
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text(inv.id, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AvenInk)
+                                    Surface(color = AvenMint, shape = RoundedCornerShape(100.dp)) {
+                                        Text(inv.status, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                                    }
+                                }
+                                Text("Doctor: ${inv.doctorName} (${inv.specialty})", fontSize = 12.sp, color = AvenMuted)
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Paid: ₹${inv.totalAmount.toInt()} via ${inv.paymentMethod}", fontSize = 12.sp, color = AvenTeal, fontWeight = FontWeight.SemiBold)
+                                    Text(inv.date, fontSize = 11.sp, color = AvenMuted)
+                                }
+                            }
+                        }
                     }
                 }
             },
             confirmButton = {
                 Button(onClick = { showInvoiceModal = false }, colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)) {
-                    Text("Download Receipt")
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    // Notifications Feed Modal
+    if (showNotificationsModal) {
+        AlertDialog(
+            onDismissRequest = { showNotificationsModal = false },
+            title = { Text("Notifications", fontWeight = FontWeight.Bold, color = AvenInk) },
+            text = {
+                LazyColumn(modifier = Modifier.heightIn(max = 350.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(notifications) { notif ->
+                        Surface(
+                            color = if (notif.isRead) AvenWhite else AvenMint.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    coroutineScope.launch {
+                                        patientViewModel.markNotificationRead(notif.id)
+                                    }
+                                }
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text(notif.title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AvenInk)
+                                    Text(notif.timestamp, fontSize = 11.sp, color = AvenMuted)
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(notif.subtitle, fontSize = 12.sp, color = AvenMuted)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showNotificationsModal = false }, colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)) {
+                    Text("Done")
                 }
             }
         )

@@ -186,6 +186,7 @@ fun DocDirectApp() {
             // Screen 6: Health Records & Consent Sharing Vault
             composable("aven_records") {
                 AvenRecordsScreen(
+                    patientViewModel = patientViewModel,
                     onTabSelected = { tab ->
                         when (tab) {
                             "home" -> navController.navigate("aven_home") { popUpTo("aven_home") { inclusive = true } }
@@ -201,6 +202,7 @@ fun DocDirectApp() {
             // Screen 7: Profile, Family, Billing & Settings ("You")
             composable("aven_profile") {
                 AvenProfileScreen(
+                    patientViewModel = patientViewModel,
                     onTabSelected = { tab ->
                         when (tab) {
                             "home" -> navController.navigate("aven_home") { popUpTo("aven_home") { inclusive = true } }
