@@ -25,6 +25,15 @@ interface AppointmentDao {
 
     @Query("UPDATE appointments SET prescription = :prescription, status = 'COMPLETED' WHERE id = :appointmentId")
     suspend fun addPrescription(appointmentId: String, prescription: String)
+
+    @Query("SELECT COUNT(*) FROM appointments")
+    suspend fun getAppointmentCount(): Int
+
+    @Query("UPDATE appointments SET appointmentDate = :newDate, appointmentTime = :newTime WHERE id = :appointmentId")
+    suspend fun rescheduleAppointment(appointmentId: String, newDate: String, newTime: String)
+
+    @Query("UPDATE appointments SET status = 'CANCELLED' WHERE id = :appointmentId")
+    suspend fun cancelAppointment(appointmentId: String)
 }
 
 @Dao

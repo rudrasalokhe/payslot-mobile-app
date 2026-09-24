@@ -22,6 +22,12 @@ class AppRepository private constructor(context: Context) {
 
     val currentRole: StateFlow<UserRole> = MutableStateFlow(sessionManager.getUserRole()).asStateFlow()
 
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            seedAvenSampleData()
+        }
+    }
+
     // Persistent Doctors stream
     val doctors: Flow<List<DoctorProfile>> = doctorDao.getAllDoctors().map { entities ->
         entities.map { entity ->
@@ -247,6 +253,118 @@ class AppRepository private constructor(context: Context) {
 
     suspend fun addPrescription(appointmentId: String, prescriptionText: String) {
         appointmentDao.addPrescription(appointmentId, prescriptionText)
+    }
+
+    suspend fun rescheduleAppointment(appointmentId: String, newDate: String, newTime: String) {
+        appointmentDao.rescheduleAppointment(appointmentId, newDate, newTime)
+    }
+
+    suspend fun cancelAppointment(appointmentId: String) {
+        appointmentDao.cancelAppointment(appointmentId)
+    }
+
+    private suspend fun seedAvenSampleData() {
+        if (doctorDao.getDoctorCount() == 0) {
+            val miraShah = DoctorEntity(
+                id = "doc_mira_shah",
+                userId = "user_mira_shah",
+                name = "Dr Mira Shah",
+                medicalLicense = "MCI-48921-DERM",
+                specialty = "Dermatology",
+                qualification = "MBBS, MD (Dermatology)",
+                experienceYears = 8,
+                consultationFee = 1200.0,
+                bio = "Specializes in clinical and aesthetic dermatology, acne protocols, skin barrier restoration, and longevity care at Bandra Skin Clinic.",
+                rating = 4.9,
+                reviewCount = 128,
+                isAvailable = true,
+                hospitalAffiliation = "Bandra Skin Clinic, Bandra West, Mumbai"
+            )
+            doctorDao.insertDoctor(miraShah)
+
+            doctorDao.insertSlot(SlotEntity("slot_mira_1", "doc_mira_shah", "25 Sep 2026", "3:30 PM", true))
+            doctorDao.insertSlot(SlotEntity("slot_mira_2", "doc_mira_shah", "25 Sep 2026", "4:30 PM", false))
+            doctorDao.insertSlot(SlotEntity("slot_mira_3", "doc_mira_shah", "26 Sep 2026", "10:00 AM", false))
+            doctorDao.insertSlot(SlotEntity("slot_mira_4", "doc_mira_shah", "26 Sep 2026", "11:30 AM", false))
+            doctorDao.insertSlot(SlotEntity("slot_mira_5", "doc_mira_shah", "26 Sep 2026", "3:30 PM", false))
+
+            val kabirRao = DoctorEntity(
+                id = "doc_kabir_rao",
+                userId = "user_kabir_rao",
+                name = "Dr Kabir Rao",
+                medicalLicense = "MCI-31045-MED",
+                specialty = "General Medicine",
+                qualification = "MBBS, MD (Internal Medicine)",
+                experienceYears = 12,
+                consultationFee = 950.0,
+                bio = "Preventive healthcare, hypertension, metabolic wellness, and chronic disease management.",
+                rating = 4.8,
+                reviewCount = 94,
+                isAvailable = true,
+                hospitalAffiliation = "Apollo Medical Centre, Mumbai"
+            )
+            doctorDao.insertDoctor(kabirRao)
+            doctorDao.insertSlot(SlotEntity("slot_kabir_1", "doc_kabir_rao", "25 Sep 2026", "2:00 PM", false))
+            doctorDao.insertSlot(SlotEntity("slot_kabir_2", "doc_kabir_rao", "26 Sep 2026", "11:00 AM", false))
+
+            val leenaNair = DoctorEntity(
+                id = "doc_leena_nair",
+                userId = "user_leena_nair",
+                name = "Dr Leena Nair",
+                medicalLicense = "MCI-55219-PED",
+                specialty = "Pediatrics",
+                qualification = "MBBS, DCH, DNB (Pediatrics)",
+                experienceYears = 10,
+                consultationFee = 1100.0,
+                bio = "Pediatric developmental milestones, immunization, and childhood allergy management.",
+                rating = 4.9,
+                reviewCount = 112,
+                isAvailable = true,
+                hospitalAffiliation = "Lilavati Children's Wing, Mumbai"
+            )
+            doctorDao.insertDoctor(leenaNair)
+            doctorDao.insertSlot(SlotEntity("slot_leena_1", "doc_leena_nair", "26 Sep 2026", "4:00 PM", false))
+
+            val rohanKapoor = DoctorEntity(
+                id = "doc_rohan_kapoor",
+                userId = "user_rohan_kapoor",
+                name = "Dr Rohan Kapoor",
+                medicalLicense = "MCI-22874-CARD",
+                specialty = "Cardiology",
+                qualification = "MBBS, MD, DM (Cardiology)",
+                experienceYears = 15,
+                consultationFee = 1800.0,
+                bio = "Interventional cardiology, preventive cardiac screenings, lipid disorders, and ECG telemetry.",
+                rating = 5.0,
+                reviewCount = 156,
+                isAvailable = true,
+                hospitalAffiliation = "Fortis Heart Institute, Mumbai"
+            )
+            doctorDao.insertDoctor(rohanKapoor)
+            doctorDao.insertSlot(SlotEntity("slot_rohan_1", "doc_rohan_kapoor", "26 Sep 2026", "2:30 PM", false))
+        }
+
+        if (appointmentDao.getAppointmentCount() == 0) {
+            val patientId = getCurrentUserId() ?: "user_aarav_mehta"
+            val patientName = getCurrentUserName().ifBlank { "Aarav Mehta" }
+            val initialApt = AppointmentEntity(
+                id = "apt_aven_0925",
+                patientId = patientId,
+                patientName = patientName,
+                doctorId = "doc_mira_shah",
+                doctorName = "Dr Mira Shah",
+                doctorSpecialty = "Dermatologist",
+                appointmentDate = "25 Sep 2026",
+                appointmentTime = "3:30 PM IST",
+                symptoms = "Follow-up for a skin concern. Discussing rash progression and barrier restoration.",
+                feePaid = 1249.0,
+                status = AppointmentStatus.UPCOMING,
+                transactionId = "AV-INV-0925-1042",
+                prescription = "",
+                createdAt = System.currentTimeMillis()
+            )
+            appointmentDao.insertAppointment(initialApt)
+        }
     }
 
     // Chat Flow

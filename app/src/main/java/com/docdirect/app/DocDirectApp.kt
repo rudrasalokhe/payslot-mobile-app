@@ -12,8 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.docdirect.app.data.model.UserRole
 import com.docdirect.app.ui.auth.AuthViewModel
-import com.docdirect.app.ui.auth.ClinicalAccessAuthScreen
-import com.docdirect.app.ui.auth.DoctorSignupScreen
+import com.docdirect.app.ui.aven.*
 import com.docdirect.app.ui.chat.ChatViewModel
 import com.docdirect.app.ui.chat.OnlineChatScreen
 import com.docdirect.app.ui.consultation.AgoraVideoCallScreen
@@ -38,9 +37,9 @@ fun DocDirectApp() {
 
     val startDest = remember {
         if (authViewModel.isLoggedIn()) {
-            if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) "doctor_dashboard" else "aura_home"
+            if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) "aven_clinician" else "aven_home"
         } else {
-            "clinical_auth"
+            "aven_welcome"
         }
     }
 
@@ -49,75 +48,206 @@ fun DocDirectApp() {
             navController = navController,
             startDestination = startDest
         ) {
-            // Screen 1: Clinical Access & Intake Portal
-            composable("clinical_auth") {
-                ClinicalAccessAuthScreen(
-                    authViewModel = authViewModel,
-                    onNavigateToDoctorSignup = { navController.navigate("doctor_signup") },
-                    onLoginSuccess = { role ->
-                        val dest = if (role == UserRole.DOCTOR) "doctor_dashboard" else "aura_home"
-                        navController.navigate(dest) {
+            // ===== AVEN CORE SCREENS =====
+
+            // Screen 0: Aven Welcome / Direction Entry Point
+            composable("aven_welcome") {
+                AvenWelcomeScreen(
+                    onPatientEnter = {
+                        navController.navigate("aven_home") {
                             popUpTo(0)
                         }
+                    },
+                    onClinicianEnter = {
+                        navController.navigate("aven_clinician")
+                    },
+                    onOperationsEnter = {
+                        navController.navigate("aven_operations")
                     }
                 )
             }
 
-            composable("doctor_signup") {
-                DoctorSignupScreen(
-                    authViewModel = authViewModel,
+            // Screen 1: Aven Patient Home
+            composable("aven_home") {
+                val userName = patientViewModel.currentUserName.ifBlank { "Aarav Mehta" }
+                AvenHomeScreen(
+                    patientViewModel = patientViewModel,
+                    userName = userName,
+                    onTabSelected = { tab ->
+                        when (tab) {
+                            "home" -> {}
+                            "explore" -> navController.navigate("aven_explore")
+                            "visits" -> navController.navigate("aven_visits")
+                            "records" -> navController.navigate("aven_records")
+                            "you" -> navController.navigate("aven_profile")
+                        }
+                    },
+                    onDoctorSelected = { doctorId ->
+                        navController.navigate("aven_doctor_profile/$doctorId")
+                    },
+                    onBookDoctor = { doctorId ->
+                        navController.navigate("aven_booking/$doctorId")
+                    },
+                    onStartVideoCall = { aptId, doctorName ->
+                        val encodedName = URLEncoder.encode(doctorName, "UTF-8")
+                        navController.navigate("video_call/$aptId/$encodedName")
+                    },
+                    onOpenChat = { aptId ->
+                        navController.navigate("chat/$aptId")
+                    },
+                    onOpenSearch = {
+                        navController.navigate("aven_explore")
+                    }
+                )
+            }
+
+            // Screen 2: Aven Explore & Search Clinicians
+            composable("aven_explore") {
+                AvenExploreScreen(
+                    patientViewModel = patientViewModel,
+                    onTabSelected = { tab ->
+                        when (tab) {
+                            "home" -> navController.navigate("aven_home") { popUpTo("aven_home") { inclusive = true } }
+                            "explore" -> {}
+                            "visits" -> navController.navigate("aven_visits")
+                            "records" -> navController.navigate("aven_records")
+                            "you" -> navController.navigate("aven_profile")
+                        }
+                    },
+                    onDoctorSelected = { doctorId ->
+                        navController.navigate("aven_doctor_profile/$doctorId")
+                    },
+                    onBookDoctor = { doctorId ->
+                        navController.navigate("aven_booking/$doctorId")
+                    }
+                )
+            }
+
+            // Screen 3: Clinician Profile (Dr Mira Shah)
+            composable(
+                "aven_doctor_profile/{doctorId}",
+                arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val doctorId = backStackEntry.arguments?.getString("doctorId") ?: "doc_mira_shah"
+                AvenDoctorProfileScreen(
+                    doctorId = doctorId,
+                    patientViewModel = patientViewModel,
                     onNavigateBack = { navController.popBackStack() },
-                    onSignupSuccess = {
-                        navController.navigate("doctor_dashboard") {
-                            popUpTo(0)
+                    onProceedToBook = { docId ->
+                        navController.navigate("aven_booking/$docId")
+                    }
+                )
+            }
+
+            // Screen 4: 4-Step Booking, Intake & Payment Flow
+            composable(
+                "aven_booking/{doctorId}",
+                arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val doctorId = backStackEntry.arguments?.getString("doctorId") ?: "doc_mira_shah"
+                AvenBookingFlowScreen(
+                    doctorId = doctorId,
+                    patientViewModel = patientViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onBookingComplete = { aptId ->
+                        navController.navigate("aven_visits") {
+                            popUpTo("aven_home")
                         }
                     }
                 )
             }
 
-            // Screen 3: Patient Overview & Vitals Dashboard
-            composable("aura_home") {
-                AuraHomeScreen(
-                    userName = patientViewModel.currentUserName.ifBlank { "Alex" },
-                    onNavigateToClinicians = { navController.navigate("clinicians") },
-                    onNavigateToMyAppointments = { navController.navigate("patient_appointments") },
-                    onNavigateToTelehealthCall = { navController.navigate("patient_appointments") },
-                    onOpenChat = { navController.navigate("chat/general_care") },
+            // Screen 5: Appointments & Visits Hub
+            composable("aven_visits") {
+                AvenVisitsScreen(
+                    patientViewModel = patientViewModel,
+                    onTabSelected = { tab ->
+                        when (tab) {
+                            "home" -> navController.navigate("aven_home") { popUpTo("aven_home") { inclusive = true } }
+                            "explore" -> navController.navigate("aven_explore")
+                            "visits" -> {}
+                            "records" -> navController.navigate("aven_records")
+                            "you" -> navController.navigate("aven_profile")
+                        }
+                    },
+                    onStartVideoCall = { aptId, doctorName ->
+                        val encodedName = URLEncoder.encode(doctorName, "UTF-8")
+                        navController.navigate("video_call/$aptId/$encodedName")
+                    },
+                    onOpenChat = { aptId ->
+                        navController.navigate("chat/$aptId")
+                    },
+                    onBookNewVisit = {
+                        navController.navigate("aven_explore")
+                    }
+                )
+            }
+
+            // Screen 6: Health Records & Consent Sharing Vault
+            composable("aven_records") {
+                AvenRecordsScreen(
+                    onTabSelected = { tab ->
+                        when (tab) {
+                            "home" -> navController.navigate("aven_home") { popUpTo("aven_home") { inclusive = true } }
+                            "explore" -> navController.navigate("aven_explore")
+                            "visits" -> navController.navigate("aven_visits")
+                            "records" -> {}
+                            "you" -> navController.navigate("aven_profile")
+                        }
+                    }
+                )
+            }
+
+            // Screen 7: Profile, Family, Billing & Settings ("You")
+            composable("aven_profile") {
+                AvenProfileScreen(
+                    onTabSelected = { tab ->
+                        when (tab) {
+                            "home" -> navController.navigate("aven_home") { popUpTo("aven_home") { inclusive = true } }
+                            "explore" -> navController.navigate("aven_explore")
+                            "visits" -> navController.navigate("aven_visits")
+                            "records" -> navController.navigate("aven_records")
+                            "you" -> {}
+                        }
+                    },
+                    onNavigateToClinicianWorkspace = {
+                        navController.navigate("aven_clinician")
+                    },
+                    onNavigateToOperations = {
+                        navController.navigate("aven_operations")
+                    },
                     onSignOut = {
                         authViewModel.logout()
-                        navController.navigate("clinical_auth") {
+                        navController.navigate("aven_welcome") {
                             popUpTo(0)
                         }
                     }
                 )
             }
 
-            // Screen 4: Clinicians Directory & Fast Booking
-            composable("clinicians") {
-                CliniciansDirectoryScreen(
-                    patientViewModel = patientViewModel,
-                    onNavigateToHome = { navController.navigate("aura_home") },
-                    onNavigateToTelehealthCall = { docName -> navController.navigate("telehealth_call/$docName") },
-                    onOpenChat = { navController.navigate("chat/general_care") },
-                    onSelectDoctor = { docId -> navController.navigate("doctor_detail/$docId") }
-                )
-            }
-
-            // Screen 2: Telehealth Video Consultation & Biometrics HUD (UI mockup)
-            composable(
-                "telehealth_call/{doctorName}",
-                arguments = listOf(navArgument("doctorName") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val docName = backStackEntry.arguments?.getString("doctorName") ?: "Dr. Julian Vance, MD"
-                TelehealthConsultationScreen(
-                    doctorName = docName,
-                    specialty = "Longevity & Preventive Medicine",
+            // Screen 8: Clinician Workspace (Dr Mira Shah)
+            composable("aven_clinician") {
+                AvenClinicianWorkspaceScreen(
+                    doctorViewModel = doctorViewModel,
                     onNavigateBack = { navController.popBackStack() },
-                    onOpenChat = { navController.navigate("chat/call_session") }
+                    onStartVideoCall = { aptId, patientName ->
+                        val encodedName = URLEncoder.encode(patientName, "UTF-8")
+                        navController.navigate("video_call/$aptId/$encodedName")
+                    },
+                    onOpenChat = { aptId ->
+                        navController.navigate("chat/$aptId")
+                    }
                 )
             }
 
-            // ===== AGORA VIDEO CALL =====
+            // Screen 9: Admin Operations & Audit Log
+            composable("aven_operations") {
+                AvenOperationsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            // ===== REAL-TIME AGORA RTC VIDEO CALL =====
             composable(
                 "video_call/{appointmentId}/{remoteUserName}",
                 arguments = listOf(
@@ -129,8 +259,8 @@ fun DocDirectApp() {
                 val remoteNameEncoded = backStackEntry.arguments?.getString("remoteUserName") ?: ""
                 val remoteName = try { URLDecoder.decode(remoteNameEncoded, "UTF-8") } catch (e: Exception) { remoteNameEncoded }
                 val isDoctor = authViewModel.getCurrentUserRole() == UserRole.DOCTOR
-                val localUserId = authViewModel.getCurrentUserId()
-                val localUserName = authViewModel.getCurrentUserName()
+                val localUserId = authViewModel.getCurrentUserId().ifBlank { "user_aarav_mehta" }
+                val localUserName = authViewModel.getCurrentUserName().ifBlank { "Aarav Mehta" }
 
                 AgoraVideoCallScreen(
                     appointmentId = aptId,
@@ -142,87 +272,7 @@ fun DocDirectApp() {
                 )
             }
 
-            // Doctor Portal Screens
-            composable("doctor_dashboard") {
-                DoctorDashboardScreen(
-                    viewModel = doctorViewModel,
-                    onNavigateToSlots = { navController.navigate("doctor_slots") },
-                    onNavigateToAppointments = { navController.navigate("doctor_appointments") },
-                    onOpenChat = { aptId -> navController.navigate("chat/$aptId") },
-                    onStartVideoCall = { aptId, patientName ->
-                        val encodedName = URLEncoder.encode(patientName, "UTF-8")
-                        navController.navigate("video_call/$aptId/$encodedName")
-                    },
-                    onSignOut = {
-                        authViewModel.logout()
-                        navController.navigate("clinical_auth") {
-                            popUpTo(0)
-                        }
-                    }
-                )
-            }
-
-            composable("doctor_slots") {
-                SlotManagerScreen(
-                    viewModel = doctorViewModel,
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable("doctor_appointments") {
-                DoctorAppointmentsScreen(
-                    viewModel = doctorViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    onOpenChat = { aptId -> navController.navigate("chat/$aptId") },
-                    onStartVideoCall = { aptId, patientName ->
-                        val encodedName = URLEncoder.encode(patientName, "UTF-8")
-                        navController.navigate("video_call/$aptId/$encodedName")
-                    }
-                )
-            }
-
-            // Slot Booking & Checkout
-            composable(
-                "doctor_detail/{doctorId}",
-                arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val docId = backStackEntry.arguments?.getString("doctorId") ?: ""
-                DoctorDetailScreen(
-                    doctorId = docId,
-                    viewModel = patientViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    onProceedToPayment = { slotId, symptoms ->
-                        navController.navigate("checkout/$docId/$slotId?symptoms=$symptoms")
-                    }
-                )
-            }
-
-            composable(
-                "checkout/{doctorId}/{slotId}?symptoms={symptoms}",
-                arguments = listOf(
-                    navArgument("doctorId") { type = NavType.StringType },
-                    navArgument("slotId") { type = NavType.StringType },
-                    navArgument("symptoms") { type = NavType.StringType; defaultValue = "" }
-                )
-            ) { backStackEntry ->
-                val docId = backStackEntry.arguments?.getString("doctorId") ?: ""
-                val slotId = backStackEntry.arguments?.getString("slotId") ?: ""
-                val symptoms = backStackEntry.arguments?.getString("symptoms") ?: ""
-                PaymentCheckoutScreen(
-                    doctorId = docId,
-                    slotId = slotId,
-                    symptoms = symptoms,
-                    viewModel = patientViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    onBookingSuccess = { aptId ->
-                        navController.navigate("patient_appointments") {
-                            popUpTo("aura_home")
-                        }
-                    }
-                )
-            }
-
-            // Real-time Chat
+            // ===== REAL-TIME ONLINE CHAT =====
             composable(
                 "chat/{appointmentId}",
                 arguments = listOf(navArgument("appointmentId") { type = NavType.StringType })
@@ -232,19 +282,6 @@ fun DocDirectApp() {
                     appointmentId = aptId,
                     viewModel = chatViewModel,
                     onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            // Patient Appointments
-            composable("patient_appointments") {
-                PatientAppointmentsScreen(
-                    viewModel = patientViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    onOpenChat = { aptId -> navController.navigate("chat/$aptId") },
-                    onStartVideoCall = { aptId, doctorName ->
-                        val encodedName = URLEncoder.encode(doctorName, "UTF-8")
-                        navController.navigate("video_call/$aptId/$encodedName")
-                    }
                 )
             }
         }

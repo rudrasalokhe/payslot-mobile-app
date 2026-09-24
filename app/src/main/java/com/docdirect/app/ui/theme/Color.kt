@@ -2,56 +2,73 @@ package com.docdirect.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Designer's Aura Health Design Tokens
-val AuraPrimary = Color(0xFF00685F)
-val AuraPrimaryContainer = Color(0xFF008378)
-val AuraOnPrimary = Color(0xFFFFFFFF)
-val AuraOnPrimaryContainer = Color(0xFFF4FFFC)
+// Aven Design System Tokens
+val AvenInk = Color(0xFF102F32)       // Primary text
+val AvenTeal = Color(0xFF145B55)      // Primary actions / active state
+val AvenDeep = Color(0xFF0B3937)      // Dark brand surfaces
+val AvenLime = Color(0xFFDDFC91)      // Accent surfaces; pair with dark text
+val AvenBg = Color(0xFFF5F7F3)        // Main canvas
+val AvenWhite = Color(0xFFFFFFFF)     // Cards and fields
+val AvenMuted = Color(0xFF5B6E70)     // Secondary text
+val AvenLine = Color(0xFFDDE5DE)      // Borders and dividers
+val AvenMint = Color(0xFFE8F1E9)      // Soft success/selected surfaces
+val AvenSoft = Color(0xFFEEF2EE)      // Neutral disabled/surface fill
+val AvenRed = Color(0xFFB43D39)       // Errors / destructive actions
+val AvenRose = Color(0xFFFFF0ED)      // Soft error surface
+val AvenAmber = Color(0xFF835E14)     // Warning text
+val AvenSand = Color(0xFFFAF1D9)      // Warning surface
+val AvenBlue = Color(0xFF456A95)      // Supporting blue
+val AvenLavender = Color(0xFFEDEAF7)  // Supporting calendar surface
 
-val AuraSecondary = Color(0xFF006C49)
-val AuraSecondaryContainer = Color(0xFF6CF8BB)
-val AuraOnSecondaryContainer = Color(0xFF00714D)
-val AuraSecondaryFixed = Color(0xFF6FFBBE)
-val AuraSecondaryFixedDim = Color(0xFF4EDEA3)
+// Compatibility mappings for previous tokens so existing code keeps compiling
+val AuraPrimary = AvenTeal
+val AuraPrimaryContainer = AvenDeep
+val AuraOnPrimary = AvenWhite
+val AuraOnPrimaryContainer = AvenLime
 
-val AuraTertiary = Color(0xFF006194)
-val AuraTertiaryContainer = Color(0xFF007BB9)
+val AuraSecondary = AvenTeal
+val AuraSecondaryContainer = AvenMint
+val AuraOnSecondaryContainer = AvenInk
+val AuraSecondaryFixed = AvenLime
+val AuraSecondaryFixedDim = AvenLime
 
-val AuraBackground = Color(0xFFFAF8FF)
-val AuraSurface = Color(0xFFFAF8FF)
-val AuraSurfaceBright = Color(0xFFFAF8FF)
-val AuraSurfaceContainerLowest = Color(0xFFFFFFFF)
-val AuraSurfaceContainerLow = Color(0xFFF2F3FF)
-val AuraSurfaceContainer = Color(0xFFEAEDFF)
-val AuraSurfaceContainerHigh = Color(0xFFE2E7FF)
-val AuraSurfaceContainerHighest = Color(0xFFDAE2FD)
+val AuraTertiary = AvenBlue
+val AuraTertiaryContainer = AvenLavender
 
-val AuraOnSurface = Color(0xFF131B2E)
-val AuraOnSurfaceVariant = Color(0xFF3D4947)
-val AuraOutline = Color(0xFF6D7A77)
-val AuraOutlineVariant = Color(0xFFBCC9C6)
-val AuraBorderSubtle = Color(0xFFE2E8F0)
+val AuraBackground = AvenBg
+val AuraSurface = AvenBg
+val AuraSurfaceBright = AvenWhite
+val AuraSurfaceContainerLowest = AvenWhite
+val AuraSurfaceContainerLow = AvenSoft
+val AuraSurfaceContainer = AvenMint
+val AuraSurfaceContainerHigh = AvenLine
+val AuraSurfaceContainerHighest = AvenSoft
 
-val AuraError = Color(0xFFBA1A1A)
-val AuraErrorContainer = Color(0xFFFFDAD6)
-val AuraOnError = Color(0xFFFFFFFF)
+val AuraOnSurface = AvenInk
+val AuraOnSurfaceVariant = AvenMuted
+val AuraOutline = AvenMuted
+val AuraOutlineVariant = AvenLine
+val AuraBorderSubtle = AvenLine
 
-val AuraInverseSurface = Color(0xFF283044)
-val AuraInverseOnSurface = Color(0xFFEEF0FF)
-val AuraInversePrimary = Color(0xFF6BD8CB)
+val AuraError = AvenRed
+val AuraErrorContainer = AvenRose
+val AuraOnError = AvenWhite
 
-// Compatibility aliases
-val TealPrimary = AuraPrimary
-val TealDark = Color(0xFF004D40)
-val TealLight = AuraSurfaceContainerLow
-val TealAccent = AuraInversePrimary
-val MedicalNavy = AuraOnSurface
-val MedicalBlue = AuraTertiary
-val MedicalBlueLight = AuraSurfaceContainer
-val BackgroundLight = AuraBackground
-val SurfaceLight = AuraSurfaceContainerLowest
-val TextPrimary = AuraOnSurface
-val TextSecondary = AuraOnSurfaceVariant
-val SuccessGreen = AuraSecondary
-val WarningOrange = Color(0xFFF59E0B)
-val ErrorRed = AuraError
+val AuraInverseSurface = AvenDeep
+val AuraInverseOnSurface = AvenWhite
+val AuraInversePrimary = AvenLime
+
+val TealPrimary = AvenTeal
+val TealDark = AvenDeep
+val TealLight = AvenMint
+val TealAccent = AvenLime
+val MedicalNavy = AvenDeep
+val MedicalBlue = AvenBlue
+val MedicalBlueLight = AvenMint
+val BackgroundLight = AvenBg
+val SurfaceLight = AvenWhite
+val TextPrimary = AvenInk
+val TextSecondary = AvenMuted
+val SuccessGreen = AvenTeal
+val WarningOrange = AvenAmber
+val ErrorRed = AvenRed

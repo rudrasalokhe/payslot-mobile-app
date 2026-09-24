@@ -84,4 +84,12 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
             fee = fee
         )
     }
+
+    suspend fun rescheduleAppointment(appointmentId: String, newDate: String, newTime: String) {
+        repository.rescheduleAppointment(appointmentId, newDate, newTime)
+    }
+
+    suspend fun cancelAppointment(appointmentId: String) {
+        repository.cancelAppointment(appointmentId)
+    }
 }

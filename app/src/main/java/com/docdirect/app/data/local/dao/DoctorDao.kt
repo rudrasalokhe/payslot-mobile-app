@@ -37,4 +37,7 @@ interface DoctorDao {
 
     @Query("UPDATE slots SET isBooked = 1 WHERE id = :slotId")
     suspend fun markSlotBooked(slotId: String)
+
+    @Query("SELECT COUNT(*) FROM doctors")
+    suspend fun getDoctorCount(): Int
 }
