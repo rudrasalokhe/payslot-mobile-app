@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -46,6 +47,10 @@ fun AvenProfileScreen(
     var showNotificationsModal by remember { mutableStateOf(false) }
     var showSignOutDialog by remember { mutableStateOf(false) }
 
+    var showSavedDoctorsModal by remember { mutableStateOf(false) }
+    var showSettingsModal by remember { mutableStateOf(false) }
+    var showSupportModal by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = AvenBg,
         topBar = {
@@ -54,31 +59,25 @@ fun AvenProfileScreen(
                     .fillMaxWidth()
                     .background(AvenBg)
                     .statusBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = 24.dp, vertical = 14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = "You",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AvenInk
-                        )
-                        Text(
-                            text = "Account settings, family profiles & preferences.",
-                            fontSize = 13.sp,
-                            color = AvenMuted
-                        )
-                    }
+                    Text(
+                        text = "Your space.",
+                        fontSize = 29.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenInk,
+                        letterSpacing = (-0.7).sp
+                    )
 
                     IconButton(
                         onClick = { showNotificationsModal = true },
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(42.dp)
                             .clip(CircleShape)
                             .background(AvenWhite)
                             .border(1.dp, AvenLine, CircleShape)
@@ -90,7 +89,7 @@ fun AvenProfileScreen(
                                 }
                             }
                         ) {
-                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = AvenInk, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = AvenInk, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -107,19 +106,18 @@ fun AvenProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item { Spacer(modifier = Modifier.height(2.dp)) }
 
-            // User Identity Card
+            // User Identity Card (Exact profile.svg)
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(22.dp),
-                    color = AvenWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                    shadowElevation = 1.dp
+                    color = AvenDeep,
+                    shadowElevation = 2.dp
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp),
@@ -127,29 +125,87 @@ fun AvenProfileScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(60.dp)
+                                .size(64.dp)
                                 .clip(CircleShape)
-                                .background(AvenDeep),
+                                .background(AvenLime),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("AM", color = AvenLime, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                            Text("AM", color = AvenDeep, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                         }
 
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Column {
-                            Text("Aarav Mehta", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AvenInk)
-                            Text("+91 98765 43210 • Born 18 Mar 1998", fontSize = 12.sp, color = AvenMuted)
-                            Text("aarav@example.com", fontSize = 12.sp, color = AvenTeal)
+                            Text("Aarav Mehta", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text("aarav@example.com", fontSize = 12.sp, color = Color(0xFFC2D8CD))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Edit profile →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenLime)
                         }
                     }
                 }
             }
 
+            // 5 Menu Cards (Exact profile.svg 76dp height cards)
+            item {
+                ProfileCardItem(
+                    title = "Family profiles",
+                    subtitle = "Book for the people you care for",
+                    icon = Icons.Default.Groups,
+                    onClick = { showFamilyModal = true }
+                )
+            }
+
+            item {
+                ProfileCardItem(
+                    title = "Payments & invoices",
+                    subtitle = "Saved methods and visit receipts",
+                    icon = Icons.Default.CreditCard,
+                    onClick = { showInvoiceModal = true }
+                )
+            }
+
+            item {
+                ProfileCardItem(
+                    title = "Saved doctors",
+                    subtitle = "Your care shortlist",
+                    icon = Icons.Default.FavoriteBorder,
+                    onClick = { showSavedDoctorsModal = true }
+                )
+            }
+
+            item {
+                ProfileCardItem(
+                    title = "Settings & privacy",
+                    subtitle = "Notifications, access and security",
+                    icon = Icons.Default.Settings,
+                    onClick = { showSettingsModal = true }
+                )
+            }
+
+            item {
+                ProfileCardItem(
+                    title = "Help & support",
+                    subtitle = "We’re here when you need us",
+                    icon = Icons.AutoMirrored.Filled.HelpOutline,
+                    onClick = { showSupportModal = true }
+                )
+            }
+
+            item {
+                ProfileCardItem(
+                    title = "Device test (Video & Audio)",
+                    subtitle = "Check camera and microphone before visits",
+                    icon = Icons.Default.Videocam,
+                    onClick = { showDeviceCheckModal = true }
+                )
+            }
+
             // Clinical & Operations Workspace Switchers
             item {
-                Text("Role & Workspaces", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AvenInk)
                 Spacer(modifier = Modifier.height(8.dp))
+                Text("Role & Workspaces", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AvenInk)
+                Spacer(modifier = Modifier.height(6.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(
                         shape = RoundedCornerShape(16.dp),
@@ -193,48 +249,6 @@ fun AvenProfileScreen(
                             }
                             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = AvenBlue, modifier = Modifier.size(18.dp))
                         }
-                    }
-                }
-            }
-
-            // Quick Preferences Section (Backed by SQLite DB)
-            item {
-                Text("Care Settings & Records", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AvenInk)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = AvenWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine)
-                ) {
-                    Column {
-                        ProfileMenuRow(
-                            title = "Family profiles",
-                            subtitle = "${familyMembers.size} member(s) registered in database",
-                            icon = Icons.Default.Groups,
-                            onClick = { showFamilyModal = true }
-                        )
-                        HorizontalDivider(color = AvenLine.copy(alpha = 0.6f))
-                        ProfileMenuRow(
-                            title = "Payments & receipts",
-                            subtitle = "${invoices.size} invoice(s) • Total ₹${invoices.sumOf { it.totalAmount }.toInt()}",
-                            icon = Icons.Default.ReceiptLong,
-                            onClick = { showInvoiceModal = true }
-                        )
-                        HorizontalDivider(color = AvenLine.copy(alpha = 0.6f))
-                        ProfileMenuRow(
-                            title = "Device test (Video & Audio)",
-                            subtitle = "Check camera and microphone before visits",
-                            icon = Icons.Default.Videocam,
-                            onClick = { showDeviceCheckModal = true }
-                        )
-                        HorizontalDivider(color = AvenLine.copy(alpha = 0.6f))
-                        ProfileMenuRow(
-                            title = "Active sessions",
-                            subtitle = "This phone (Android) • Chrome on Windows",
-                            icon = Icons.Default.Devices,
-                            onClick = {}
-                        )
                     }
                 }
             }
@@ -486,6 +500,95 @@ fun AvenProfileScreen(
         )
     }
 
+    // Saved Doctors Modal
+    if (showSavedDoctorsModal) {
+        AlertDialog(
+            onDismissRequest = { showSavedDoctorsModal = false },
+            title = { Text("Saved Doctors", fontWeight = FontWeight.Bold, color = AvenInk) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Surface(shape = RoundedCornerShape(14.dp), color = AvenMint, modifier = Modifier.fillMaxWidth()) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(AvenTeal), contentAlignment = Alignment.Center) {
+                                Text("MS", color = AvenWhite, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Dr Mira Shah", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AvenInk)
+                                Text("Dermatologist • Bandra Skin Clinic • 4.9 ★", fontSize = 12.sp, color = AvenMuted)
+                            }
+                        }
+                    }
+
+                    Surface(shape = RoundedCornerShape(14.dp), color = AvenWhite, border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine), modifier = Modifier.fillMaxWidth()) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(AvenSoft), contentAlignment = Alignment.Center) {
+                                Text("KR", color = AvenInk, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Dr Kabir Rao", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AvenInk)
+                                Text("Cardiologist • Lilavati Hospital • 4.8 ★", fontSize = 12.sp, color = AvenMuted)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showSavedDoctorsModal = false }, colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)) {
+                    Text("Done")
+                }
+            }
+        )
+    }
+
+    // Settings Modal
+    if (showSettingsModal) {
+        AlertDialog(
+            onDismissRequest = { showSettingsModal = false },
+            title = { Text("Settings & Privacy", fontWeight = FontWeight.Bold, color = AvenInk) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("• In-app notifications: Enabled", fontSize = 13.sp, color = AvenInk)
+                    Text("• SMS appointment reminders: Active (+91 98765 43210)", fontSize = 13.sp, color = AvenInk)
+                    Text("• Record encryption: AES-256 enabled locally", fontSize = 13.sp, color = AvenTeal)
+                    Text("• Two-factor authentication: Active", fontSize = 13.sp, color = AvenInk)
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showSettingsModal = false }, colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    // Support Modal
+    if (showSupportModal) {
+        AlertDialog(
+            onDismissRequest = { showSupportModal = false },
+            title = { Text("Help & Support", fontWeight = FontWeight.Bold, color = AvenInk) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("We're here when you need us, 24/7 across India.", fontSize = 13.sp, color = AvenMuted)
+                    Surface(shape = RoundedCornerShape(12.dp), color = AvenMint, modifier = Modifier.fillMaxWidth()) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Phone, contentDescription = null, tint = AvenTeal)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text("Toll-free Care Desk: 1800-209-AVEN", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AvenDeep)
+                        }
+                    }
+                    Text("Email: care@avenhealth.in • Mumbai, MH", fontSize = 12.sp, color = AvenMuted)
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showSupportModal = false }, colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)) {
+                    Text("Got it")
+                }
+            }
+        )
+    }
+
     // Sign out dialog
     if (showSignOutDialog) {
         AlertDialog(
@@ -510,33 +613,43 @@ fun AvenProfileScreen(
 }
 
 @Composable
-fun ProfileMenuRow(
+fun ProfileCardItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clip(RoundedCornerShape(17.dp))
+            .clickable { onClick() },
+        color = AvenWhite,
+        shape = RoundedCornerShape(17.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine)
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(AvenSoft),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(18.dp))
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(AvenMint),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(22.dp))
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AvenInk)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(subtitle, fontSize = 12.sp, color = AvenMuted)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = AvenMuted, modifier = Modifier.size(20.dp))
         }
-        Spacer(modifier = Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = AvenInk)
-            Text(subtitle, fontSize = 12.sp, color = AvenMuted)
-        }
-        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = AvenLine, modifier = Modifier.size(16.dp))
     }
 }

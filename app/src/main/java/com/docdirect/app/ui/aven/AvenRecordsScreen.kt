@@ -42,6 +42,9 @@ fun AvenRecordsScreen(
         else recordsList.filter { it.title.contains(searchQuery, ignoreCase = true) || it.category.contains(searchQuery, ignoreCase = true) }
     }
 
+    var selectedPatient by remember { mutableStateOf("Aarav Mehta") }
+    var showPatientPicker by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = AvenBg,
         topBar = {
@@ -50,56 +53,62 @@ fun AvenRecordsScreen(
                     .fillMaxWidth()
                     .background(AvenBg)
                     .statusBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = 24.dp, vertical = 14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
                 ) {
                     Column {
                         Text(
-                            text = "Health records",
-                            fontSize = 24.sp,
+                            text = "Your health,",
+                            fontSize = 29.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AvenInk
+                            color = AvenInk,
+                            letterSpacing = (-0.7).sp
                         )
                         Text(
-                            text = "Your clinical documents, reports & consent vault.",
-                            fontSize = 13.sp,
-                            color = AvenMuted
+                            text = "in one place.",
+                            fontSize = 29.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AvenInk,
+                            letterSpacing = (-0.7).sp
                         )
                     }
 
-                    Button(
+                    Surface(
                         onClick = { showUploadModal = true },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        color = AvenTeal,
+                        modifier = Modifier.size(50.dp)
                     ) {
-                        Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Upload", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Add, contentDescription = "Upload record", tint = AvenWhite, modifier = Modifier.size(24.dp))
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Search field
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search records, reports, prescriptions...", fontSize = 13.sp, color = AvenMuted) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AvenMuted) },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = AvenWhite,
-                        unfocusedContainerColor = AvenWhite,
-                        focusedBorderColor = AvenTeal,
-                        unfocusedBorderColor = AvenLine
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Patient selector pill (Aarav Mehta ⌄)
+                Surface(
+                    onClick = { showPatientPicker = true },
+                    shape = RoundedCornerShape(15.dp),
+                    color = AvenMint
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "$selectedPatient  ⌄",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AvenTeal
+                        )
+                    }
+                }
             }
         },
         bottomBar = {
@@ -113,86 +122,64 @@ fun AvenRecordsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(4.dp)) }
+            item { Spacer(modifier = Modifier.height(2.dp)) }
 
-            // Active Sharing Consent Notice
+            // Section Header: Recent records & Share
             item {
-                Surface(
-                    color = AvenMint,
-                    shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.2f)),
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(AvenTeal),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = AvenWhite, modifier = Modifier.size(18.dp))
+                    Text(
+                        text = "Recent records",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenInk
+                    )
+                    Text(
+                        text = "Share",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenTeal,
+                        modifier = Modifier.clickable {
+                            if (recordsList.isNotEmpty()) showShareModal = recordsList.first()
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Consent active with Dr Mira Shah",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AvenDeep
-                            )
-                            Text(
-                                text = "2 records shared for video consultation • Expires 27 Sep 2026",
-                                fontSize = 11.sp,
-                                color = AvenMuted
-                            )
-                        }
-                    }
+                    )
                 }
-            }
-
-            item {
-                Text(
-                    text = "${filteredRecords.size} records saved in database",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AvenMuted
-                )
             }
 
             items(filteredRecords) { record ->
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
+                        .clip(RoundedCornerShape(17.dp))
                         .clickable { recordDetailModal = record },
                     color = AvenWhite,
-                    shape = RoundedCornerShape(18.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                    shadowElevation = 1.dp
+                    shape = RoundedCornerShape(17.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(AvenSoft),
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(13.dp))
+                                .background(AvenMint),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = if (record.category.contains("Lab")) Icons.Default.Science else Icons.Default.Description,
+                                imageVector = if (record.category.contains("Lab") || record.category.contains("blood", ignoreCase = true)) Icons.Default.Science else Icons.Default.Description,
                                 contentDescription = null,
                                 tint = AvenTeal,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
@@ -201,42 +188,134 @@ fun AvenRecordsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = record.title,
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = AvenInk
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "${record.category} • ${record.fileSize}",
-                                    fontSize = 12.sp,
-                                    color = AvenMuted
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("•", fontSize = 12.sp, color = AvenLine)
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = record.date,
-                                    fontSize = 12.sp,
-                                    color = AvenMuted
-                                )
-                            }
+                            Text(
+                                text = if (record.title.contains("summary", ignoreCase = true) || record.title.contains("notes", ignoreCase = true)) {
+                                    "${record.date} · ${record.sharedWithDoctorName}"
+                                } else {
+                                    "${record.date} · Uploaded by you"
+                                },
+                                fontSize = 12.sp,
+                                color = AvenMuted
+                            )
                         }
 
-                        IconButton(onClick = { showShareModal = record }) {
-                            Icon(
-                                imageVector = if (record.isSharedWithDoctor) Icons.Default.Share else Icons.Default.FileDownload,
-                                contentDescription = "Share",
-                                tint = if (record.isSharedWithDoctor) AvenTeal else AvenMuted,
-                                modifier = Modifier.size(20.dp)
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = "Details",
+                            tint = AvenMuted,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            // Share only what's needed banner
+            item {
+                Surface(
+                    color = AvenMint,
+                    shape = RoundedCornerShape(15.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(AvenTeal.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Share only what’s needed",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AvenTeal
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "You decide which records a clinician can see.",
+                                fontSize = 12.sp,
+                                color = AvenTeal
                             )
                         }
                     }
                 }
             }
 
+            // Upload a record button
+            item {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { showUploadModal = true },
+                    shape = RoundedCornerShape(16.dp),
+                    color = AvenWhite,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(vertical = 14.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Upload a record",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AvenInk
+                        )
+                    }
+                }
+            }
+
             item { Spacer(modifier = Modifier.height(20.dp)) }
         }
+    }
+
+    // Patient Picker Dialog
+    if (showPatientPicker) {
+        AlertDialog(
+            onDismissRequest = { showPatientPicker = false },
+            title = { Text("Select Profile", fontWeight = FontWeight.Bold, color = AvenInk) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Aarav Mehta" to "Self", "Nisha Mehta" to "Mother (56y)").forEach { (name, relation) ->
+                        Surface(
+                            onClick = {
+                                selectedPatient = name
+                                showPatientPicker = false
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (selectedPatient == name) AvenMint else AvenWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedPatient == name) AvenTeal else AvenLine),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AvenInk)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("($relation)", fontSize = 12.sp, color = AvenMuted)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPatientPicker = false }) {
+                    Text("Cancel", color = AvenMuted)
+                }
+            }
+        )
     }
 
     // Upload Modal (Saves to Room SQLite Database!)

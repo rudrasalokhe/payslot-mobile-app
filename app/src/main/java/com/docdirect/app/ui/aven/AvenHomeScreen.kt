@@ -5,11 +5,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.AppointmentStatus
-import com.docdirect.app.data.model.DoctorProfile
 import com.docdirect.app.ui.patient.PatientViewModel
 import com.docdirect.app.ui.theme.*
 
@@ -48,22 +47,13 @@ fun AvenHomeScreen(
             doctorId = "doc_mira_shah",
             doctorName = "Dr Mira Shah",
             doctorSpecialty = "Dermatologist",
-            appointmentDate = "25 Sep 2026",
-            appointmentTime = "3:30 PM IST",
-            symptoms = "Follow-up for skin concern. Skin barrier restoration.",
+            appointmentDate = "25 Sep",
+            appointmentTime = "3:30 PM",
+            symptoms = "Follow-up for a skin concern. Discussing rash progression and barrier restoration.",
             feePaid = 1249.0,
             status = AppointmentStatus.UPCOMING,
             transactionId = "AV-INV-0925-1042"
         )
-
-    val specialties = listOf(
-        "General Medicine" to Icons.Default.MedicalServices,
-        "Dermatology" to Icons.Default.Face,
-        "Dental Care" to Icons.Default.CleanHands,
-        "Pediatrics" to Icons.Default.ChildCare,
-        "Cardiology" to Icons.Default.Favorite,
-        "Orthopedics" to Icons.Default.Accessibility
-    )
 
     Scaffold(
         containerColor = AvenBg,
@@ -78,68 +68,92 @@ fun AvenHomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(10.dp)) }
+            item { Spacer(modifier = Modifier.height(6.dp)) }
 
-            // Brand Top Bar
+            // Top Header: Location + Notification Bell
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(AvenLime)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "AVEN",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AvenTeal,
-                                letterSpacing = 1.sp
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onOpenSearch() }
+                    ) {
                         Text(
-                            text = "Good morning, ${userName.split(" ").firstOrNull() ?: "Aarav"}",
-                            fontSize = 24.sp,
+                            text = "MUMBAI • BANDRA WEST",
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AvenInk
+                            color = AvenMuted,
+                            letterSpacing = 0.8.sp
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Select Location",
+                            tint = AvenMuted,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
 
+                    // Notification Bell with unread badge
                     Box(
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(AvenMint)
+                            .background(AvenWhite)
                             .border(1.dp, AvenLine, CircleShape)
                             .clickable { onTabSelected("you") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "AM",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = AvenTeal
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = AvenInk,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(top = 10.dp, end = 10.dp)
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(AvenRed)
                         )
                     }
                 }
             }
 
-            // Search Bar
+            // Welcome Text
+            item {
+                Column {
+                    Text(
+                        text = "Good morning, ${userName.split(" ").firstOrNull() ?: "Aarav"}",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenInk
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "How can we help you feel better?",
+                        fontSize = 15.sp,
+                        color = AvenMuted
+                    )
+                }
+            }
+
+            // Search Bar Field
             item {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(56.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .clickable { onOpenSearch() },
                     color = AvenWhite,
@@ -149,15 +163,15 @@ fun AvenHomeScreen(
                 ) {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
                             tint = AvenMuted,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
@@ -169,144 +183,135 @@ fun AvenHomeScreen(
                 }
             }
 
-            // Next Step Hero Card: "Your next step to feeling better"
+            // Hero Banner: "Your next step to feeling better."
             item {
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .clickable { onDoctorSelected("doc_mira_shah") },
                     color = AvenDeep,
                     shape = RoundedCornerShape(24.dp),
-                    shadowElevation = 4.dp
+                    shadowElevation = 3.dp
                 ) {
                     Column(modifier = Modifier.padding(22.dp)) {
+                        Surface(
+                            color = AvenLime,
+                            shape = RoundedCornerShape(100.dp)
+                        ) {
+                            Text(
+                                text = "CARE THAT FITS YOUR DAY",
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AvenDeep,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                color = AvenLime,
-                                shape = RoundedCornerShape(100.dp)
-                            ) {
+                            Column {
                                 Text(
-                                    text = "YOUR NEXT STEP",
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                    fontSize = 10.sp,
+                                    text = "Your next step",
+                                    fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = AvenDeep,
-                                    letterSpacing = 0.5.sp
+                                    color = AvenWhite
+                                )
+                                Text(
+                                    text = "to feeling better.",
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AvenWhite
                                 )
                             }
 
-                            Text(
-                                text = "${nextAppointment.appointmentDate} • ${nextAppointment.appointmentTime}",
-                                fontSize = 12.sp,
-                                color = AvenWhite.copy(alpha = 0.8f),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        Text(
-                            text = nextAppointment.doctorName,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AvenWhite
-                        )
-                        Text(
-                            text = "${nextAppointment.doctorSpecialty} • Bandra Skin Clinic",
-                            fontSize = 14.sp,
-                            color = AvenLime,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        Spacer(modifier = Modifier.height(18.dp))
-
-                        // Video Call Action Hub (Agora integration)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Button(
-                                onClick = { onStartVideoCall(nextAppointment.id, nextAppointment.doctorName) },
-                                shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = AvenLime,
-                                    contentColor = AvenDeep
-                                ),
-                                modifier = Modifier.weight(1.3f).height(48.dp)
+                            // Circular lime arrow button
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(AvenLime),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp), tint = AvenDeep)
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Join Video Call", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenDeep)
-                            }
-
-                            OutlinedButton(
-                                onClick = { onOpenChat(nextAppointment.id) },
-                                shape = RoundedCornerShape(14.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, AvenWhite.copy(alpha = 0.4f)),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AvenWhite),
-                                modifier = Modifier.weight(1f).height(48.dp)
-                            ) {
-                                Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(16.dp), tint = AvenWhite)
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Chat", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AvenWhite)
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    tint = AvenDeep,
+                                    modifier = Modifier.size(22.dp)
+                                )
                             }
                         }
                     }
                 }
             }
 
-            // Specialties Carousel
+            // Specialist Grid (4 Columns matching artboard)
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Explore specialties",
+                            text = "Find your specialist",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = AvenInk
                         )
                         Text(
                             text = "See all",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
                             color = AvenTeal,
                             modifier = Modifier.clickable { onTabSelected("explore") }
                         )
                     }
 
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(specialties) { (name, icon) ->
+                        val items = listOf(
+                            Triple("General", Icons.Default.MedicalServices, "General"),
+                            Triple("Skin", Icons.Default.Face, "Skin"),
+                            Triple("Dental", Icons.Default.CleanHands, "Dental"),
+                            Triple("Mental", Icons.Default.Psychology, "Mental")
+                        )
+
+                        items.forEach { (label, icon, _) ->
                             Surface(
-                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(87.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable { onTabSelected("explore") },
                                 color = AvenWhite,
+                                shape = RoundedCornerShape(16.dp),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                                modifier = Modifier.clickable { onTabSelected("explore") }
+                                shadowElevation = 1.dp
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .background(AvenMint),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(icon, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(18.dp))
-                                    }
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = label,
+                                        tint = AvenTeal,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = name,
-                                        fontSize = 13.sp,
+                                        text = label,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = AvenInk
                                     )
@@ -317,7 +322,113 @@ fun AvenHomeScreen(
                 }
             }
 
-            // "Doctors for you" Section
+            // "Your next appointment" Hero Card with Agora Video Call
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Your next appointment",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenInk
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { onTabSelected("visits") },
+                        color = AvenWhite,
+                        shape = RoundedCornerShape(20.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                        shadowElevation = 2.dp
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Doctor Avatar Box
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(Color(0xFFD8E7D6)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "MS",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp,
+                                        color = AvenTeal
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(14.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = nextAppointment.doctorName,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = AvenInk
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${nextAppointment.appointmentDate} • ${nextAppointment.appointmentTime} IST",
+                                        fontSize = 13.sp,
+                                        color = AvenMuted
+                                    )
+                                }
+
+                                Surface(
+                                    color = AvenMint,
+                                    shape = RoundedCornerShape(100.dp)
+                                ) {
+                                    Text(
+                                        text = "Video visit",
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AvenTeal
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // One-tap start Agora video call
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { onStartVideoCall(nextAppointment.id, nextAppointment.doctorName) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                                    modifier = Modifier.weight(1.3f).height(46.dp)
+                                ) {
+                                    Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp), tint = AvenWhite)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Join Video Call", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
+                                }
+
+                                OutlinedButton(
+                                    onClick = { onOpenChat(nextAppointment.id) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                                    modifier = Modifier.weight(1f).height(46.dp)
+                                ) {
+                                    Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(16.dp), tint = AvenInk)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Chat", fontSize = 13.sp, color = AvenInk)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Top Clinicians
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -331,53 +442,21 @@ fun AvenHomeScreen(
                         color = AvenInk
                     )
                     Text(
-                        text = "Compare",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        text = "Filters",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
                         color = AvenTeal,
                         modifier = Modifier.clickable { onTabSelected("explore") }
                     )
                 }
             }
 
-            if (doctors.isEmpty()) {
-                item {
-                    CircularProgressIndicator(color = AvenTeal, modifier = Modifier.padding(16.dp))
-                }
-            } else {
-                items(doctors) { doc ->
-                    AvenDoctorCard(
-                        doctor = doc,
-                        onBookClick = { onBookDoctor(doc.id) },
-                        onProfileClick = { onDoctorSelected(doc.id) }
-                    )
-                }
-            }
-
-            // Brand Quote Card
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = AvenMint,
-                    shape = RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.15f))
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text(
-                            text = "A little less waiting. A lot more living.",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AvenDeep
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Your doctor, your time. Transparent INR fees, verified Indian clinicians, and instant digital care.",
-                            fontSize = 13.sp,
-                            color = AvenMuted,
-                            lineHeight = 18.sp
-                        )
-                    }
-                }
+            items(doctors) { doc ->
+                AvenDoctorCard(
+                    doctor = doc,
+                    onBookClick = { onBookDoctor(doc.id) },
+                    onProfileClick = { onDoctorSelected(doc.id) }
+                )
             }
 
             item { Spacer(modifier = Modifier.height(20.dp)) }

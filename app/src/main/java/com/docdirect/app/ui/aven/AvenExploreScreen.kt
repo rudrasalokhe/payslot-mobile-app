@@ -1,16 +1,16 @@
 package com.docdirect.app.ui.aven
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,10 +33,10 @@ fun AvenExploreScreen(
 ) {
     val doctors by patientViewModel.doctors.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("All") }
+    var selectedFilter by remember { mutableStateOf("All care") }
     var showFilterSheet by remember { mutableStateOf(false) }
 
-    val filterOptions = listOf("All", "Video visit", "Dermatology", "General Medicine", "Pediatrics", "Cardiology", "Under ₹1,200")
+    val filterOptions = listOf("All care", "Video visits", "In person", "Dermatology", "General", "Pediatrics")
 
     val filteredList = remember(doctors, searchQuery, selectedFilter) {
         doctors.filter { doc ->
@@ -46,13 +46,12 @@ fun AvenExploreScreen(
                     doc.hospitalAffiliation.contains(searchQuery, ignoreCase = true)
 
             val matchesFilter = when (selectedFilter) {
-                "All" -> true
-                "Video visit" -> true
+                "All care" -> true
+                "Video visits" -> true
+                "In person" -> true
                 "Dermatology" -> doc.specialty.contains("Dermatolog", ignoreCase = true)
-                "General Medicine" -> doc.specialty.contains("Medicine", ignoreCase = true)
+                "General" -> doc.specialty.contains("Medicine", ignoreCase = true)
                 "Pediatrics" -> doc.specialty.contains("Pediatric", ignoreCase = true)
-                "Cardiology" -> doc.specialty.contains("Cardio", ignoreCase = true)
-                "Under ₹1,200" -> doc.consultationFee <= 1200.0
                 else -> true
             }
 
@@ -68,81 +67,81 @@ fun AvenExploreScreen(
                     .fillMaxWidth()
                     .background(AvenBg)
                     .statusBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
             ) {
+                // Exact Headline from artboard
                 Text(
-                    text = "Explore clinicians",
-                    fontSize = 24.sp,
+                    text = "Find your kind",
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AvenInk
+                    color = AvenInk,
+                    lineHeight = 36.sp
                 )
                 Text(
-                    text = "Find transparent fees, verified reviews, and prompt appointments.",
-                    fontSize = 13.sp,
-                    color = AvenMuted
+                    text = "of care.",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AvenInk,
+                    lineHeight = 36.sp
                 )
-                Spacer(modifier = Modifier.height(14.dp))
 
-                // Search Input Field
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search by doctor, specialty, or clinic...", fontSize = 14.sp, color = AvenMuted) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AvenMuted) },
-                    trailingIcon = {
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Search Bar
+                Surface(
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = AvenWhite,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                    shadowElevation = 1.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = AvenMuted, modifier = Modifier.size(22.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search doctors and specialties", fontSize = 14.sp, color = AvenMuted) },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear", tint = AvenMuted)
+                                Icon(Icons.Default.Close, contentDescription = "Clear", tint = AvenMuted, modifier = Modifier.size(18.dp))
                             }
                         }
-                    },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = AvenWhite,
-                        unfocusedContainerColor = AvenWhite,
-                        focusedBorderColor = AvenTeal,
-                        unfocusedBorderColor = AvenLine
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Filter Chips Row
+                // Filter Pills Row
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    item {
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = AvenWhite,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                            modifier = Modifier.clickable { showFilterSheet = true }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp), tint = AvenInk)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Filter", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
-                            }
-                        }
-                    }
-
                     items(filterOptions) { filter ->
                         val isSelected = selectedFilter == filter
                         Surface(
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(100.dp),
                             color = if (isSelected) AvenDeep else AvenWhite,
                             border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) AvenDeep else AvenLine),
                             modifier = Modifier.clickable { selectedFilter = filter }
                         ) {
                             Text(
                                 text = filter,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) AvenLime else AvenInk
                             )
@@ -162,7 +161,7 @@ fun AvenExploreScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
@@ -172,10 +171,17 @@ fun AvenExploreScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${filteredList.size} doctors available",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AvenMuted
+                        text = "Doctors for you",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenInk
+                    )
+                    Text(
+                        text = "Filters",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AvenTeal,
+                        modifier = Modifier.clickable { showFilterSheet = true }
                     )
                 }
             }
@@ -200,7 +206,7 @@ fun AvenExploreScreen(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Try broadening your filters or searching for another specialty.",
+                                text = "Try broadening your search or resetting filters.",
                                 fontSize = 13.sp,
                                 color = AvenMuted,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -209,7 +215,7 @@ fun AvenExploreScreen(
                             Button(
                                 onClick = {
                                     searchQuery = ""
-                                    selectedFilter = "All"
+                                    selectedFilter = "All care"
                                 },
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)
@@ -242,20 +248,20 @@ fun AvenExploreScreen(
                     Text("Visit Modality", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = AvenInk)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
-                            selected = selectedFilter == "Video visit",
-                            onClick = { selectedFilter = "Video visit"; showFilterSheet = false },
+                            selected = selectedFilter == "Video visits",
+                            onClick = { selectedFilter = "Video visits"; showFilterSheet = false },
                             label = { Text("Video visit") }
                         )
                         FilterChip(
-                            selected = selectedFilter == "All",
-                            onClick = { selectedFilter = "All"; showFilterSheet = false },
+                            selected = selectedFilter == "In person",
+                            onClick = { selectedFilter = "In person"; showFilterSheet = false },
                             label = { Text("In person") }
                         )
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
                     Text("Specialty", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = AvenInk)
-                    listOf("Dermatology", "General Medicine", "Pediatrics", "Cardiology").forEach { cat ->
+                    listOf("Dermatology", "General", "Pediatrics").forEach { cat ->
                         TextButton(
                             onClick = { selectedFilter = cat; showFilterSheet = false },
                             modifier = Modifier.fillMaxWidth()
