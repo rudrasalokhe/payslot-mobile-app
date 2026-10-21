@@ -122,7 +122,7 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
             doctorName = doctorName,
             doctorSpecialty = doctorSpecialty,
             patientId = currentUserId,
-            patientName = if (currentUserName.isNotBlank()) currentUserName else "Aarav Mehta",
+            patientName = currentUserName.ifBlank { "Patient" },
             slotId = slot.id,
             date = slot.date,
             time = slot.time,

@@ -20,6 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import android.provider.CalendarContract
+import androidx.compose.ui.platform.LocalContext
 import com.docdirect.app.data.model.DoctorProfile
 import com.docdirect.app.data.model.TimeSlot
 import com.docdirect.app.ui.patient.PatientViewModel
@@ -33,6 +36,7 @@ fun AvenBookingFlowScreen(
     onNavigateBack: () -> Unit,
     onBookingComplete: (appointmentId: String) -> Unit
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val doctors by patientViewModel.doctors.collectAsState()
     val familyMembers by patientViewModel.familyMembers.collectAsState()
@@ -57,7 +61,7 @@ fun AvenBookingFlowScreen(
     var selectedVisitType by remember { mutableStateOf("Video consultation") }
     var selectedDate by remember { mutableStateOf("25") }
     var selectedTime by remember { mutableStateOf("3:30 PM") }
-    var selectedPatient by remember { mutableStateOf("Aarav Mehta") }
+    var selectedPatient by remember { mutableStateOf(patientViewModel.currentUserName.ifBlank { "You" }) }
     var symptomNotes by remember { mutableStateOf("Follow-up for a skin concern. I would like to discuss next steps.") }
     var selectedPaymentMethod by remember { mutableStateOf("UPI") }
     var isProcessingPayment by remember { mutableStateOf(false) }
@@ -969,7 +973,18 @@ fun AvenBookingFlowScreen(
 
                             // Buttons
                             OutlinedButton(
-                                onClick = { /* Add to calendar */ },
+                                onClick = {
+                                    try {
+                                        val intent = Intent(Intent.ACTION_INSERT).apply {
+                                            data = CalendarContract.Events.CONTENT_URI
+                                            putExtra(CalendarContract.Events.TITLE, "Consultation with ${doctor.name}")
+                                            putExtra(CalendarContract.Events.DESCRIPTION, "Aven Consultation: $symptomNotes")
+                                            putExtra(CalendarContract.Events.EVENT_LOCATION, "Aven App Video Consultation")
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {
+                                    }
+                                },
                                 shape = RoundedCornerShape(16.dp),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
                                 modifier = Modifier.fillMaxWidth().height(54.dp)
