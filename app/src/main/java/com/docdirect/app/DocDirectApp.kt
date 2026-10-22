@@ -87,6 +87,7 @@ fun DocDirectApp() {
             composable("aven_verify") {
                 AvenVerifyScreen(
                     email = regEmail,
+                    authViewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onVerified = {
                         navController.navigate("aven_setup")
