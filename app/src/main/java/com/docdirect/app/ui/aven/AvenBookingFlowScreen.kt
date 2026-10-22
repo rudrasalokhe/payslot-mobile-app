@@ -60,6 +60,10 @@ fun AvenBookingFlowScreen(
         hospitalAffiliation = "Bandra Skin Clinic, Mumbai"
     )
 
+    val baseFee = doctor.consultationFee
+    val platformFee = 49.0
+    val totalFee = baseFee + platformFee
+
     // Current step in the booking wizard (1: Type, 2: Slot, 3: Patient, 4: Intake, 5: Review, 6: Payment, 7: Confirmed)
     var currentStep by remember { mutableIntStateOf(1) }
 
@@ -139,9 +143,7 @@ fun AvenBookingFlowScreen(
         }
     }
 
-    val baseFee = 1200.0
-    val platformFee = 49.0
-    val totalFee = baseFee + platformFee
+
 
     Scaffold(
         containerColor = AvenBg,
