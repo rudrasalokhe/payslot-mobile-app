@@ -78,6 +78,9 @@ dependencies {
     // Agora Video SDK
     implementation("io.agora.rtc:full-sdk:4.3.1")
 
+    // Razorpay Standard Checkout SDK
+    implementation("com.razorpay:checkout:1.6.41")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

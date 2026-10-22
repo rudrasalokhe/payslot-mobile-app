@@ -234,10 +234,11 @@ class AppRepository private constructor(context: Context) {
         date: String,
         time: String,
         symptoms: String,
-        fee: Double
+        fee: Double,
+        transactionId: String? = null
     ): Appointment {
         val aptId = "apt_${System.currentTimeMillis()}"
-        val txnId = "TXN-${System.currentTimeMillis().toString().takeLast(7)}"
+        val txnId = transactionId ?: "TXN-${System.currentTimeMillis().toString().takeLast(7)}"
         val entity = AppointmentEntity(
             id = aptId,
             patientId = patientId,

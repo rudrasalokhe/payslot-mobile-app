@@ -115,7 +115,9 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
         doctorSpecialty: String,
         slot: TimeSlot,
         symptoms: String,
-        fee: Double
+        fee: Double,
+        transactionId: String? = null,
+        paymentMethod: String = "UPI (Google Pay)"
     ): Appointment {
         val apt = repository.bookAppointment(
             doctorId = doctorId,
@@ -127,7 +129,8 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
             date = slot.date,
             time = slot.time,
             symptoms = symptoms,
-            fee = fee
+            fee = fee,
+            transactionId = transactionId
         )
         // Also automatically create the invoice in database
         repository.createInvoice(
@@ -135,9 +138,9 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
             patientName = apt.patientName,
             doctorName = apt.doctorName,
             specialty = apt.doctorSpecialty,
-            fee = fee - 49.0,
+            fee = maxOf(0.0, fee - 49.0),
             platformFee = 49.0,
-            paymentMethod = "UPI (Google Pay)"
+            paymentMethod = paymentMethod
         )
         return apt
     }

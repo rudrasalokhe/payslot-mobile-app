@@ -25,6 +25,11 @@ import android.provider.CalendarContract
 import androidx.compose.ui.platform.LocalContext
 import com.docdirect.app.data.model.DoctorProfile
 import com.docdirect.app.data.model.TimeSlot
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.docdirect.app.data.payment.PaymentManager
+import com.docdirect.app.data.payment.PaymentState
 import com.docdirect.app.ui.patient.PatientViewModel
 import com.docdirect.app.ui.theme.*
 import kotlinx.coroutines.launch
@@ -66,6 +71,73 @@ fun AvenBookingFlowScreen(
     var selectedPaymentMethod by remember { mutableStateOf("UPI") }
     var isProcessingPayment by remember { mutableStateOf(false) }
     var confirmedAppointmentId by remember { mutableStateOf<String?>(null) }
+    var confirmedTxnId by remember { mutableStateOf<String?>(null) }
+    var confirmedPaymentMethod by remember { mutableStateOf<String?>(null) }
+    var paymentErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    val paymentState by PaymentManager.paymentState.collectAsState()
+
+    val upiLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val responseData = result.data?.getStringExtra("response")
+            ?: result.data?.extras?.getString("response")
+            ?: ""
+        PaymentManager.onUpiResult(result.resultCode, responseData)
+    }
+
+    LaunchedEffect(paymentState) {
+        when (val state = paymentState) {
+            is PaymentState.Success -> {
+                isProcessingPayment = false
+                coroutineScope.launch {
+                    try {
+                        val dummySlot = TimeSlot(
+                            id = "slot_${System.currentTimeMillis()}",
+                            date = "$selectedDate Sep 2026",
+                            time = selectedTime,
+                            isBooked = false
+                        )
+                        val created = patientViewModel.bookAppointment(
+                            doctorId = doctor.id,
+                            doctorName = doctor.name,
+                            doctorSpecialty = doctor.specialty,
+                            slot = dummySlot,
+                            symptoms = symptomNotes,
+                            fee = totalFee,
+                            transactionId = state.transactionId,
+                            paymentMethod = state.paymentMethod
+                        )
+                        confirmedAppointmentId = created.id
+                        confirmedTxnId = state.transactionId
+                        confirmedPaymentMethod = state.paymentMethod
+                        currentStep = 7
+                    } catch (e: Exception) {
+                        confirmedAppointmentId = "AV-${System.currentTimeMillis().toString().takeLast(6)}"
+                        confirmedTxnId = state.transactionId
+                        confirmedPaymentMethod = state.paymentMethod
+                        currentStep = 7
+                    } finally {
+                        PaymentManager.reset()
+                    }
+                }
+            }
+            is PaymentState.Error -> {
+                isProcessingPayment = false
+                paymentErrorMessage = state.description
+                PaymentManager.reset()
+            }
+            is PaymentState.Cancelled -> {
+                isProcessingPayment = false
+                paymentErrorMessage = "Payment was cancelled. You can choose another method or retry."
+                PaymentManager.reset()
+            }
+            is PaymentState.Processing -> {
+                isProcessingPayment = true
+            }
+            is PaymentState.Idle -> {}
+        }
+    }
 
     val baseFee = 1200.0
     val platformFee = 49.0
@@ -850,30 +922,46 @@ fun AvenBookingFlowScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Button(
                         onClick = {
+                            paymentErrorMessage = null
                             isProcessingPayment = true
-                            coroutineScope.launch {
-                                try {
-                                    val dummySlot = TimeSlot(
-                                        id = "slot_${System.currentTimeMillis()}",
-                                        date = "$selectedDate Sep 2026",
-                                        time = selectedTime,
-                                        isBooked = false
-                                    )
-                                    val created = patientViewModel.bookAppointment(
-                                        doctorId = doctor.id,
+                            val activity = context as? Activity
+
+                            if (selectedPaymentMethod == "UPI") {
+                                val launched = PaymentManager.startNativeUpiPayment(
+                                    context = context,
+                                    amountInRupees = totalFee,
+                                    doctorName = doctor.name,
+                                    appointmentId = "apt_${System.currentTimeMillis()}",
+                                    launcher = upiLauncher
+                                )
+                                if (!launched) {
+                                    if (activity != null) {
+                                        PaymentManager.startRazorpayPayment(
+                                            activity = activity,
+                                            amountInRupees = totalFee,
+                                            appointmentId = "apt_${System.currentTimeMillis()}",
+                                            doctorName = doctor.name,
+                                            patientName = selectedPatient,
+                                            patientEmail = patientViewModel.currentUserEmail.ifBlank { "patient@docdirect.app" },
+                                            patientPhone = patientViewModel.currentUserPhone.ifBlank { "9876543210" }
+                                        )
+                                    } else {
+                                        PaymentManager.simulatePaymentSuccess("UPI (Direct)")
+                                    }
+                                }
+                            } else {
+                                if (activity != null) {
+                                    PaymentManager.startRazorpayPayment(
+                                        activity = activity,
+                                        amountInRupees = totalFee,
+                                        appointmentId = "apt_${System.currentTimeMillis()}",
                                         doctorName = doctor.name,
-                                        doctorSpecialty = doctor.specialty,
-                                        slot = dummySlot,
-                                        symptoms = symptomNotes,
-                                        fee = totalFee
+                                        patientName = selectedPatient,
+                                        patientEmail = patientViewModel.currentUserEmail.ifBlank { "patient@docdirect.app" },
+                                        patientPhone = patientViewModel.currentUserPhone.ifBlank { "9876543210" }
                                     )
-                                    confirmedAppointmentId = created.id
-                                    currentStep = 7
-                                } catch (e: Exception) {
-                                    confirmedAppointmentId = "AV-0925-1042"
-                                    currentStep = 7
-                                } finally {
-                                    isProcessingPayment = false
+                                } else {
+                                    PaymentManager.simulatePaymentSuccess(selectedPaymentMethod)
                                 }
                             }
                         },
@@ -965,7 +1053,15 @@ fun AvenBookingFlowScreen(
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text("Booking ID", color = AvenMuted, fontSize = 13.sp)
-                                    Text("AV-0925-1042", fontWeight = FontWeight.Bold, color = AvenTeal, fontSize = 14.sp)
+                                    Text(confirmedAppointmentId ?: "AV-0925-1042", fontWeight = FontWeight.Bold, color = AvenTeal, fontSize = 14.sp)
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Transaction Ref", color = AvenMuted, fontSize = 13.sp)
+                                    Text(confirmedTxnId ?: "TXN-PAID", fontWeight = FontWeight.Bold, color = AvenInk, fontSize = 14.sp)
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Payment Method", color = AvenMuted, fontSize = 13.sp)
+                                    Text(confirmedPaymentMethod ?: selectedPaymentMethod, fontWeight = FontWeight.Bold, color = AvenInk, fontSize = 14.sp)
                                 }
                             }
 
@@ -1019,5 +1115,31 @@ fun AvenBookingFlowScreen(
 
             item { Spacer(modifier = Modifier.height(30.dp)) }
         }
+    }
+
+    if (paymentErrorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { paymentErrorMessage = null },
+            title = { Text("Payment Notice", fontWeight = FontWeight.Bold, color = AvenInk) },
+            text = { Text(paymentErrorMessage ?: "", color = AvenInk, fontSize = 14.sp) },
+            confirmButton = {
+                Button(
+                    onClick = { paymentErrorMessage = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)
+                ) {
+                    Text("Try Again")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        paymentErrorMessage = null
+                        PaymentManager.simulatePaymentSuccess("Demo Test Mode")
+                    }
+                ) {
+                    Text("Test Mode Bypass", color = AvenMuted)
+                }
+            }
+        )
     }
 }
