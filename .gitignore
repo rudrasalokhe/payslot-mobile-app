@@ -11,3 +11,7 @@ app/build/
 .cxx
 local.properties
 *.hprof
+
+# Firebase secrets & sensitive configs
+*google-services.json
+**/google-services.json

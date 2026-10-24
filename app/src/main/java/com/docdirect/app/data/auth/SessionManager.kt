@@ -70,6 +70,14 @@ class SessionManager(context: Context) {
         prefs.edit().clear().apply()
     }
 
+    fun saveFcmToken(token: String) {
+        prefs.edit().putString(KEY_FCM_TOKEN, token).apply()
+    }
+
+    fun getFcmToken(): String? {
+        return prefs.getString(KEY_FCM_TOKEN, null)
+    }
+
     companion object {
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_USER_ID = "user_id"
@@ -79,6 +87,7 @@ class SessionManager(context: Context) {
         private const val KEY_PHONE = "user_phone"
         private const val KEY_DOB = "user_dob"
         private const val KEY_PREFERRED_NAME = "user_preferred_name"
+        private const val KEY_FCM_TOKEN = "fcm_token"
 
         @Volatile
         private var instance: SessionManager? = null
