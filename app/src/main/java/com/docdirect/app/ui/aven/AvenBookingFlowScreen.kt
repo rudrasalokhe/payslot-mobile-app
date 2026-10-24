@@ -129,11 +129,33 @@ fun AvenBookingFlowScreen(
             is PaymentState.Error -> {
                 isProcessingPayment = false
                 paymentErrorMessage = state.description
+                coroutineScope.launch {
+                    try {
+                        patientViewModel.recordFailedInvoice(
+                            doctorName = doctor.name,
+                            specialty = doctor.specialty,
+                            totalAmount = totalFee,
+                            paymentMethod = selectedPaymentMethod,
+                            reason = state.description
+                        )
+                    } catch (_: Exception) {}
+                }
                 PaymentManager.reset()
             }
             is PaymentState.Cancelled -> {
                 isProcessingPayment = false
                 paymentErrorMessage = "Payment was cancelled. You can choose another method or retry."
+                coroutineScope.launch {
+                    try {
+                        patientViewModel.recordFailedInvoice(
+                            doctorName = doctor.name,
+                            specialty = doctor.specialty,
+                            totalAmount = totalFee,
+                            paymentMethod = selectedPaymentMethod,
+                            reason = "Cancelled by user"
+                        )
+                    } catch (_: Exception) {}
+                }
                 PaymentManager.reset()
             }
             is PaymentState.Processing -> {

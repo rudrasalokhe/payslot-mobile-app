@@ -587,6 +587,7 @@ class AppRepository private constructor(context: Context) {
                     totalAmount = 1249.0,
                     paymentMethod = "UPI (Google Pay)",
                     status = "PAID",
+                    transactionId = "TXN-9821443",
                     date = "25 Sep 2026"
                 )
             )
@@ -641,7 +642,18 @@ class AppRepository private constructor(context: Context) {
     // Invoices Flow
     fun getAllInvoices(): Flow<List<InvoiceEntity>> = invoiceDao.getAllInvoices()
     fun getInvoiceForAppointment(appointmentId: String): Flow<InvoiceEntity?> = invoiceDao.getInvoiceForAppointment(appointmentId)
-    suspend fun createInvoice(appointmentId: String, patientName: String, doctorName: String, specialty: String, fee: Double, platformFee: Double, paymentMethod: String) {
+    suspend fun createInvoice(
+        appointmentId: String,
+        patientName: String,
+        doctorName: String,
+        specialty: String,
+        fee: Double,
+        platformFee: Double,
+        paymentMethod: String,
+        transactionId: String = "",
+        status: String = "PAID",
+        date: String = "Today"
+    ): InvoiceEntity {
         val invoice = InvoiceEntity(
             id = "AV-INV-${System.currentTimeMillis().toString().takeLast(8)}",
             appointmentId = appointmentId,
@@ -652,10 +664,38 @@ class AppRepository private constructor(context: Context) {
             platformFee = platformFee,
             totalAmount = fee + platformFee,
             paymentMethod = paymentMethod,
-            status = "PAID",
-            date = "Today"
+            status = status,
+            transactionId = transactionId.ifBlank { "TXN-${System.currentTimeMillis().toString().takeLast(7)}" },
+            date = date
         )
         invoiceDao.insertInvoice(invoice)
+        return invoice
+    }
+
+    suspend fun retryInvoicePayment(invoiceId: String, newTransactionId: String, newMethod: String) {
+        invoiceDao.updateInvoicePayment(invoiceId, "PAID", newTransactionId, newMethod)
+    }
+
+    suspend fun recordFailedInvoice(
+        doctorName: String,
+        specialty: String,
+        totalAmount: Double,
+        paymentMethod: String,
+        reason: String
+    ): InvoiceEntity {
+        val patientName = getCurrentUserName().ifBlank { "You" }
+        return createInvoice(
+            appointmentId = "apt_failed_${System.currentTimeMillis().toString().takeLast(6)}",
+            patientName = patientName,
+            doctorName = doctorName,
+            specialty = specialty,
+            fee = maxOf(0.0, totalAmount - 49.0),
+            platformFee = 49.0,
+            paymentMethod = paymentMethod,
+            transactionId = "FAIL-${System.currentTimeMillis().toString().takeLast(6)}",
+            status = "FAILED",
+            date = "Today"
+        )
     }
 
     // Reviews Flow

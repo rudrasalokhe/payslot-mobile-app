@@ -56,6 +56,9 @@ interface InvoiceDao {
 
     @Query("UPDATE invoices SET status = :newStatus WHERE id = :invoiceId")
     suspend fun updateInvoiceStatus(invoiceId: String, newStatus: String)
+
+    @Query("UPDATE invoices SET status = :newStatus, transactionId = :newTxnId, paymentMethod = :newMethod WHERE id = :invoiceId")
+    suspend fun updateInvoicePayment(invoiceId: String, newStatus: String, newTxnId: String, newMethod: String)
 }
 
 @Dao

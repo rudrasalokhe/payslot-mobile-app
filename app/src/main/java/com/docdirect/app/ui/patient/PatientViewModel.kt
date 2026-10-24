@@ -132,7 +132,8 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
             fee = fee,
             transactionId = transactionId
         )
-        // Also automatically create the invoice in database
+        // Also automatically create the invoice in database with real transaction ID
+        val realTxn = transactionId ?: apt.transactionId
         repository.createInvoice(
             appointmentId = apt.id,
             patientName = apt.patientName,
@@ -140,9 +141,26 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
             specialty = apt.doctorSpecialty,
             fee = maxOf(0.0, fee - 49.0),
             platformFee = 49.0,
-            paymentMethod = paymentMethod
+            paymentMethod = paymentMethod,
+            transactionId = realTxn,
+            status = "PAID",
+            date = slot.date
         )
         return apt
+    }
+
+    suspend fun retryInvoicePayment(invoice: InvoiceEntity, newTransactionId: String, newMethod: String) {
+        repository.retryInvoicePayment(invoice.id, newTransactionId, newMethod)
+    }
+
+    suspend fun recordFailedInvoice(
+        doctorName: String,
+        specialty: String,
+        totalAmount: Double,
+        paymentMethod: String,
+        reason: String
+    ): InvoiceEntity {
+        return repository.recordFailedInvoice(doctorName, specialty, totalAmount, paymentMethod, reason)
     }
 
     suspend fun rescheduleAppointment(appointmentId: String, newDate: String, newTime: String) {

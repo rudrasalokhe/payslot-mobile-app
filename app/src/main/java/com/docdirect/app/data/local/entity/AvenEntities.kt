@@ -40,6 +40,7 @@ data class InvoiceEntity(
     val totalAmount: Double,
     val paymentMethod: String,
     val status: String = "PAID",
+    val transactionId: String = "",
     val date: String,
     val createdAt: Long = System.currentTimeMillis()
 )

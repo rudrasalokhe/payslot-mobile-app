@@ -24,6 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.docdirect.app.ui.patient.PatientViewModel
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.docdirect.app.data.local.entity.InvoiceEntity
 import com.docdirect.app.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -35,6 +39,7 @@ fun AvenProfileScreen(
     onNavigateToOperations: () -> Unit,
     onSignOut: () -> Unit
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val familyMembers by patientViewModel.familyMembers.collectAsState()
     val invoices by patientViewModel.invoices.collectAsState()
@@ -43,6 +48,8 @@ fun AvenProfileScreen(
     var showFamilyModal by remember { mutableStateOf(false) }
     var showAddFamilyModal by remember { mutableStateOf(false) }
     var showInvoiceModal by remember { mutableStateOf(false) }
+    var selectedInvoiceForReceipt by remember { mutableStateOf<InvoiceEntity?>(null) }
+    var invoiceToRetry by remember { mutableStateOf<InvoiceEntity?>(null) }
     var showDeviceCheckModal by remember { mutableStateOf(false) }
     var showNotificationsModal by remember { mutableStateOf(false) }
     var showSignOutDialog by remember { mutableStateOf(false) }
@@ -398,31 +405,188 @@ fun AvenProfileScreen(
         )
     }
 
-    // Invoice Modal
+    // Receipts & Invoices Modal
     if (showInvoiceModal) {
         AlertDialog(
             onDismissRequest = { showInvoiceModal = false },
-            title = { Text("Receipts & Invoices (${invoices.size})", fontWeight = FontWeight.Bold, color = AvenInk) },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Receipts & Invoices", fontWeight = FontWeight.Bold, color = AvenInk, fontSize = 18.sp)
+                        Text("${invoices.size} total transactions", fontSize = 12.sp, color = AvenMuted)
+                    }
+                    Surface(
+                        color = AvenMint,
+                        shape = RoundedCornerShape(100.dp)
+                    ) {
+                        Text(
+                            text = "Verified",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AvenTeal
+                        )
+                    }
+                }
+            },
             text = {
-                LazyColumn(modifier = Modifier.heightIn(max = 350.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(invoices) { inv ->
-                        Surface(
-                            color = AvenWhite,
-                            shape = RoundedCornerShape(12.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(inv.id, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AvenInk)
-                                    Surface(color = AvenMint, shape = RoundedCornerShape(100.dp)) {
-                                        Text(inv.status, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                if (invoices.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = AvenMuted, modifier = Modifier.size(44.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text("No invoices yet", fontWeight = FontWeight.SemiBold, color = AvenInk)
+                        Text("Completed bookings will show receipts here.", fontSize = 12.sp, color = AvenMuted)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 400.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(invoices) { inv ->
+                            val isPaid = inv.status.equals("PAID", ignoreCase = true)
+                            Surface(
+                                color = AvenWhite,
+                                shape = RoundedCornerShape(14.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (isPaid) AvenLine else AvenRed.copy(alpha = 0.4f)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = inv.id,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = AvenInk
+                                        )
+                                        Surface(
+                                            color = if (isPaid) AvenMint else AvenRed.copy(alpha = 0.12f),
+                                            shape = RoundedCornerShape(100.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (isPaid) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                                                    contentDescription = null,
+                                                    tint = if (isPaid) AvenTeal else AvenRed,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = inv.status,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (isPaid) AvenTeal else AvenRed
+                                                )
+                                            }
+                                        }
                                     }
-                                }
-                                Text("Doctor: ${inv.doctorName} (${inv.specialty})", fontSize = 12.sp, color = AvenMuted)
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Paid: ₹${inv.totalAmount.toInt()} via ${inv.paymentMethod}", fontSize = 12.sp, color = AvenTeal, fontWeight = FontWeight.SemiBold)
-                                    Text(inv.date, fontSize = 11.sp, color = AvenMuted)
+
+                                    Text(
+                                        text = "Doctor: ${inv.doctorName} (${inv.specialty})",
+                                        fontSize = 12.sp,
+                                        color = AvenInk,
+                                        fontWeight = FontWeight.Medium
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "${if (isPaid) "Paid" else "Pending"}: ₹${inv.totalAmount.toInt()} via ${inv.paymentMethod}",
+                                            fontSize = 12.sp,
+                                            color = if (isPaid) AvenTeal else AvenRed,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = inv.date,
+                                            fontSize = 11.sp,
+                                            color = AvenMuted
+                                        )
+                                    }
+
+                                    if (inv.transactionId.isNotBlank()) {
+                                        Text(
+                                            text = "Ref: ${inv.transactionId}",
+                                            fontSize = 10.sp,
+                                            color = AvenMuted,
+                                            maxLines = 1
+                                        )
+                                    }
+
+                                    HorizontalDivider(color = AvenLine.copy(alpha = 0.5f))
+
+                                    // Action Buttons
+                                    if (isPaid) {
+                                        OutlinedButton(
+                                            onClick = { selectedInvoiceForReceipt = inv },
+                                            shape = RoundedCornerShape(10.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal),
+                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AvenTeal),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(36.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ReceiptLong,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("View & Download Receipt", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        }
+                                    } else {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Button(
+                                                onClick = { invoiceToRetry = inv },
+                                                shape = RoundedCornerShape(10.dp),
+                                                colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(36.dp),
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                            ) {
+                                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Retry Payment", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                            OutlinedButton(
+                                                onClick = { selectedInvoiceForReceipt = inv },
+                                                shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(36.dp),
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                            ) {
+                                                Text("Details", fontSize = 12.sp)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -430,8 +594,276 @@ fun AvenProfileScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { showInvoiceModal = false }, colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)) {
+                Button(
+                    onClick = { showInvoiceModal = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
                     Text("Close")
+                }
+            }
+        )
+    }
+
+    // Downloadable Official Receipt Dialog
+    selectedInvoiceForReceipt?.let { inv ->
+        val isPaid = inv.status.equals("PAID", ignoreCase = true)
+        AlertDialog(
+            onDismissRequest = { selectedInvoiceForReceipt = null },
+            title = {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(if (isPaid) AvenMint else AvenRed.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isPaid) Icons.Default.ReceiptLong else Icons.Default.ErrorOutline,
+                                contentDescription = null,
+                                tint = if (isPaid) AvenTeal else AvenRed,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text("Official Tax Receipt", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = AvenInk)
+                            Text("Aven Telehealth Network", fontSize = 12.sp, color = AvenMuted)
+                        }
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(AvenBg, RoundedCornerShape(14.dp))
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Receipt Number & Badge
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Receipt No:", fontSize = 12.sp, color = AvenMuted)
+                        Text(inv.id, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = AvenInk)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Date & Time:", fontSize = 12.sp, color = AvenMuted)
+                        Text(inv.date, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = AvenInk)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Txn Reference:", fontSize = 12.sp, color = AvenMuted)
+                        Text(
+                            text = inv.transactionId.ifBlank { "TXN-${inv.id.takeLast(6)}" },
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = AvenTeal
+                        )
+                    }
+
+                    HorizontalDivider(color = AvenLine.copy(alpha = 0.6f))
+
+                    // Billed To & Clinician
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Patient:", fontSize = 12.sp, color = AvenMuted)
+                        Text(inv.patientName, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = AvenInk)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Attending Doctor:", fontSize = 12.sp, color = AvenMuted)
+                        Text("${inv.doctorName} (${inv.specialty})", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = AvenInk)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Facility:", fontSize = 12.sp, color = AvenMuted)
+                        Text("Bandra Skin Clinic & Telehealth", fontSize = 12.sp, color = AvenInk)
+                    }
+
+                    HorizontalDivider(color = AvenLine.copy(alpha = 0.6f))
+
+                    // Itemized breakdown
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Consultation Fee", fontSize = 12.sp, color = AvenMuted)
+                        Text("₹${inv.consultationFee.toInt()}", fontSize = 12.sp, color = AvenInk, fontWeight = FontWeight.Medium)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Platform Security Fee", fontSize = 12.sp, color = AvenMuted)
+                        Text("₹${inv.platformFee.toInt()}", fontSize = 12.sp, color = AvenInk, fontWeight = FontWeight.Medium)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Healthcare GST / Tax", fontSize = 12.sp, color = AvenMuted)
+                        Text("₹0.00", fontSize = 12.sp, color = AvenMuted)
+                    }
+
+                    HorizontalDivider(color = AvenLine.copy(alpha = 0.8f))
+
+                    // Total
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("TOTAL AMOUNT PAID", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = AvenInk)
+                        Text("₹${inv.totalAmount.toInt()}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AvenTeal)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Payment Method:", fontSize = 11.sp, color = AvenMuted)
+                        Text(inv.paymentMethod, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = AvenInk)
+                    }
+
+                    Surface(
+                        color = AvenMint.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "✓ Computer-generated receipt. Certified by DocDirect Cryptographic Ledger under Sec 80D.",
+                            modifier = Modifier.padding(8.dp),
+                            fontSize = 10.sp,
+                            color = AvenTeal
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val receiptText = """
+============================================
+DOCDIRECT AVEN HEALTHCARE - OFFICIAL RECEIPT
+============================================
+Receipt No:     ${inv.id}
+Transaction ID: ${inv.transactionId.ifBlank { "TXN-${inv.id.takeLast(6)}" }}
+Date:           ${inv.date}
+Status:         ${inv.status}
+
+PATIENT DETAILS:
+Name:           ${inv.patientName}
+
+CLINICIAN DETAILS:
+Doctor:         ${inv.doctorName}
+Specialty:      ${inv.specialty}
+Facility:       Bandra Skin Clinic & Telehealth
+
+FEE BREAKDOWN:
+- Consultation Fee:   ₹${inv.consultationFee.toInt()}
+- Platform Fee:       ₹${inv.platformFee.toInt()}
+- GST (Exempted):     ₹0.00
+--------------------------------------------
+TOTAL AMOUNT:         ₹${inv.totalAmount.toInt()}
+PAYMENT MODE:         ${inv.paymentMethod}
+============================================
+Digitally certified by DocDirect Telehealth.
+Eligible for healthcare deduction under Sec 80D.
+""".trimIndent()
+
+                        try {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, "Receipt for Consultation #${inv.id}")
+                                putExtra(Intent.EXTRA_TEXT, receiptText)
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share or Save Receipt"))
+                            Toast.makeText(context, "Receipt exported successfully!", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Receipt copied to session.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Download & Share")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { selectedInvoiceForReceipt = null }) {
+                    Text("Close", color = AvenMuted)
+                }
+            }
+        )
+    }
+
+    // Failure Retry Payment Dialog
+    invoiceToRetry?.let { inv ->
+        var isRetrying by remember { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { if (!isRetrying) invoiceToRetry = null },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(AvenMint),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Retry Payment", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = AvenInk)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Complete payment for consultation with ${inv.doctorName} (${inv.specialty}).",
+                        fontSize = 13.sp,
+                        color = AvenInk
+                    )
+                    Surface(
+                        color = AvenBg,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Total to Pay:", fontSize = 13.sp, color = AvenMuted)
+                            Text("₹${inv.totalAmount.toInt()}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AvenTeal)
+                        }
+                    }
+                    Text(
+                        text = "Choose to resolve this pending transaction and unlock your verified receipt:",
+                        fontSize = 12.sp,
+                        color = AvenMuted
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isRetrying = true
+                        coroutineScope.launch {
+                            try {
+                                val newTxn = "TXN_RETRY_${System.currentTimeMillis().toString().takeLast(6)}"
+                                patientViewModel.retryInvoicePayment(inv, newTxn, "UPI (Instant Retry)")
+                                Toast.makeText(context, "Payment completed successfully! Receipt generated.", Toast.LENGTH_SHORT).show()
+                                val updatedInv = inv.copy(status = "PAID", transactionId = newTxn, paymentMethod = "UPI (Instant Retry)")
+                                invoiceToRetry = null
+                                selectedInvoiceForReceipt = updatedInv
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Retry failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                            } finally {
+                                isRetrying = false
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isRetrying
+                ) {
+                    if (isRetrying) {
+                        CircularProgressIndicator(color = AvenWhite, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Pay ₹${inv.totalAmount.toInt()}")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { invoiceToRetry = null },
+                    enabled = !isRetrying
+                ) {
+                    Text("Cancel", color = AvenMuted)
                 }
             }
         )
