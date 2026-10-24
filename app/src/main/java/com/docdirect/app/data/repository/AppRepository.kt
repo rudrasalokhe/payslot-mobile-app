@@ -734,6 +734,16 @@ class AppRepository private constructor(context: Context) {
         )
     }
 
+    suspend fun resetPassword(email: String, newPassword: String): Result<Unit> {
+        val trimmed = email.lowercase().trim()
+        val user = userDao.getUserByEmail(trimmed)
+        val newHash = hashPassword(newPassword)
+        if (user != null) {
+            userDao.insertUser(user.copy(passwordHash = newHash))
+        }
+        return Result.success(Unit)
+    }
+
     private fun hashPassword(password: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
         return bytes.joinToString("") { "%02x".format(it) }

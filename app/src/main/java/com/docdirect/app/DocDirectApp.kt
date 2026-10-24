@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.docdirect.app.data.model.UserRole
 import com.docdirect.app.ui.auth.AuthViewModel
+import com.docdirect.app.ui.auth.ForgotPasswordScreen
 import com.docdirect.app.ui.aven.*
 import com.docdirect.app.ui.chat.ChatViewModel
 import com.docdirect.app.ui.chat.OnlineChatScreen
@@ -140,6 +141,7 @@ fun DocDirectApp() {
                     authViewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToSignUp = { navController.navigate("aven_signup") },
+                    onForgotPassword = { navController.navigate("aven_forgot_password") },
                     onLoginSuccess = {
                         patientViewModel.refreshUserSession()
                         if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) {
@@ -150,6 +152,19 @@ fun DocDirectApp() {
                             navController.navigate("aven_home") {
                                 popUpTo(0)
                             }
+                        }
+                    }
+                )
+            }
+
+            // Screen 0.6: Forgot Password & Security Flow
+            composable("aven_forgot_password") {
+                ForgotPasswordScreen(
+                    authViewModel = authViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToLogin = {
+                        navController.navigate("aven_login") {
+                            popUpTo("aven_login") { inclusive = true }
                         }
                     }
                 )

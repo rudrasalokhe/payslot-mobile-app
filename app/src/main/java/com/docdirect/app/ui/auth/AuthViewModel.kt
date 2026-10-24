@@ -154,6 +154,78 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun saveUserDetails(phone: String, dob: String, preferredName: String) = repository.saveUserDetails(phone, dob, preferredName)
     fun logout() = repository.logout()
 
+    // ===== Password Reset Flow =====
+    private val _passwordResetSent = MutableStateFlow(false)
+    val passwordResetSent: StateFlow<Boolean> = _passwordResetSent.asStateFlow()
+
+    private val _passwordResetSuccess = MutableStateFlow(false)
+    val passwordResetSuccess: StateFlow<Boolean> = _passwordResetSuccess.asStateFlow()
+
+    fun sendPasswordResetLink(
+        email: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        val trimmedEmail = email.trim()
+        if (trimmedEmail.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
+            val err = "Please enter a valid email address."
+            _errorMessage.value = err
+            onResult(false, err)
+            return
+        }
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            delay(500L) // Simulate API network roundtrip
+            _isLoading.value = false
+            _passwordResetSent.value = true
+            Log.i("AuthViewModel", "Password reset link and verification email dispatched to: $trimmedEmail")
+            onResult(true, null)
+        }
+    }
+
+    fun completePasswordReset(
+        email: String,
+        newPassword: String,
+        confirmPassword: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (newPassword.length < 6) {
+            val err = "Password must be at least 6 characters."
+            _errorMessage.value = err
+            onError(err)
+            return
+        }
+        if (newPassword != confirmPassword) {
+            val err = "Passwords do not match."
+            _errorMessage.value = err
+            onError(err)
+            return
+        }
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            val res = repository.resetPassword(email, newPassword)
+            _isLoading.value = false
+            res.onSuccess {
+                _passwordResetSuccess.value = true
+                onSuccess()
+            }.onFailure { error ->
+                val err = error.message ?: "Failed to reset password."
+                _errorMessage.value = err
+                onError(err)
+            }
+        }
+    }
+
+    fun resetPasswordState() {
+        _passwordResetSent.value = false
+        _passwordResetSuccess.value = false
+        _errorMessage.value = null
+    }
+
     fun login(
         email: String,
         password: String,

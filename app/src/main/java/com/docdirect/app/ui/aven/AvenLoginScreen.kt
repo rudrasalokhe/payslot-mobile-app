@@ -33,6 +33,7 @@ fun AvenLoginScreen(
     authViewModel: AuthViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToSignUp: () -> Unit,
+    onForgotPassword: () -> Unit = {},
     onLoginSuccess: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -225,7 +226,7 @@ fun AvenLoginScreen(
                     fontWeight = FontWeight.SemiBold,
                     color = AvenTeal,
                     modifier = Modifier
-                        .clickable { /* Handle forgot password */ }
+                        .clickable { onForgotPassword() }
                         .padding(vertical = 4.dp)
                 )
             }
