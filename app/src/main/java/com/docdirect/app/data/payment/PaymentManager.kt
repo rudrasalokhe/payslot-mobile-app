@@ -2,6 +2,7 @@ package com.docdirect.app.data.payment
 
 import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.result.ActivityResultLauncher
@@ -34,7 +35,7 @@ object PaymentManager {
     val paymentState: StateFlow<PaymentState> = _paymentState.asStateFlow()
 
     // Default test key ID for Razorpay
-    private const val DEFAULT_RAZORPAY_KEY = "rzp_test_DocDirectDemo"
+    private const val DEFAULT_RAZORPAY_KEY = PaymentConfig.KEY_ID
 
     fun init(context: Context) {
         try {
@@ -46,6 +47,33 @@ object PaymentManager {
 
     fun reset() {
         _paymentState.value = PaymentState.Idle
+    }
+
+    fun findActivity(context: Context): Activity? {
+        var ctx: Context? = context
+        while (ctx is ContextWrapper) {
+            if (ctx is Activity) return ctx
+            ctx = ctx.baseContext
+        }
+        return null
+    }
+
+    fun startRazorpayPayment(
+        context: Context,
+        amountInRupees: Double,
+        appointmentId: String,
+        doctorName: String,
+        patientName: String,
+        patientEmail: String,
+        patientPhone: String,
+        keyId: String = DEFAULT_RAZORPAY_KEY
+    ) {
+        val act = findActivity(context)
+        if (act == null) {
+            _paymentState.value = PaymentState.Error(-1, "Unable to launch Razorpay: Activity context not found.")
+            return
+        }
+        startRazorpayPayment(act, amountInRupees, appointmentId, doctorName, patientName, patientEmail, patientPhone, keyId)
     }
 
     fun setProcessing() {
@@ -120,7 +148,7 @@ object PaymentManager {
         amountInRupees: Double,
         doctorName: String,
         appointmentId: String,
-        upiVpa: String = "payslot.telehealth@okaxis",
+        upiVpa: String = PaymentConfig.DEFAULT_UPI_VPA,
         launcher: ActivityResultLauncher<Intent>? = null
     ): Boolean {
         _paymentState.value = PaymentState.Processing
@@ -228,6 +256,23 @@ object PaymentManager {
     /**
      * Test / Simulation fallback for offline or simulator testing
      */
+    fun verifyPaymentSignature(orderId: String, paymentId: String, signature: String): Boolean {
+        return try {
+            val payload = "$orderId|$paymentId"
+            val mac = javax.crypto.Mac.getInstance("HmacSHA256")
+            val secretKeySpec = javax.crypto.spec.SecretKeySpec(
+                PaymentConfig.KEY_SECRET.toByteArray(Charsets.UTF_8),
+                "HmacSHA256"
+            )
+            mac.init(secretKeySpec)
+            val hashBytes = mac.doFinal(payload.toByteArray(Charsets.UTF_8))
+            val generatedSignature = hashBytes.joinToString("") { "%02x".format(it) }
+            generatedSignature.equals(signature, ignoreCase = true)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun simulatePaymentSuccess(method: String = "Test UPI") {
         _paymentState.value = PaymentState.Success(
             transactionId = "SIM_${System.currentTimeMillis().toString().takeLast(8)}",

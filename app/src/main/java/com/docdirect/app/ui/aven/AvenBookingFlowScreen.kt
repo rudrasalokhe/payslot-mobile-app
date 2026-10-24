@@ -926,8 +926,6 @@ fun AvenBookingFlowScreen(
                         onClick = {
                             paymentErrorMessage = null
                             isProcessingPayment = true
-                            val activity = context as? Activity
-
                             if (selectedPaymentMethod == "UPI") {
                                 val launched = PaymentManager.startNativeUpiPayment(
                                     context = context,
@@ -937,24 +935,8 @@ fun AvenBookingFlowScreen(
                                     launcher = upiLauncher
                                 )
                                 if (!launched) {
-                                    if (activity != null) {
-                                        PaymentManager.startRazorpayPayment(
-                                            activity = activity,
-                                            amountInRupees = totalFee,
-                                            appointmentId = "apt_${System.currentTimeMillis()}",
-                                            doctorName = doctor.name,
-                                            patientName = selectedPatient,
-                                            patientEmail = patientViewModel.currentUserEmail.ifBlank { "patient@docdirect.app" },
-                                            patientPhone = patientViewModel.currentUserPhone.ifBlank { "9876543210" }
-                                        )
-                                    } else {
-                                        PaymentManager.simulatePaymentSuccess("UPI (Direct)")
-                                    }
-                                }
-                            } else {
-                                if (activity != null) {
                                     PaymentManager.startRazorpayPayment(
-                                        activity = activity,
+                                        context = context,
                                         amountInRupees = totalFee,
                                         appointmentId = "apt_${System.currentTimeMillis()}",
                                         doctorName = doctor.name,
@@ -962,9 +944,17 @@ fun AvenBookingFlowScreen(
                                         patientEmail = patientViewModel.currentUserEmail.ifBlank { "patient@docdirect.app" },
                                         patientPhone = patientViewModel.currentUserPhone.ifBlank { "9876543210" }
                                     )
-                                } else {
-                                    PaymentManager.simulatePaymentSuccess(selectedPaymentMethod)
                                 }
+                            } else {
+                                PaymentManager.startRazorpayPayment(
+                                    context = context,
+                                    amountInRupees = totalFee,
+                                    appointmentId = "apt_${System.currentTimeMillis()}",
+                                    doctorName = doctor.name,
+                                    patientName = selectedPatient,
+                                    patientEmail = patientViewModel.currentUserEmail.ifBlank { "patient@docdirect.app" },
+                                    patientPhone = patientViewModel.currentUserPhone.ifBlank { "9876543210" }
+                                )
                             }
                         },
                         enabled = !isProcessingPayment,
