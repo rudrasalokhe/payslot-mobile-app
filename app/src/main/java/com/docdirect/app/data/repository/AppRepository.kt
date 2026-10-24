@@ -10,9 +10,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.docdirect.app.workers.AppointmentReminderWorker
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class AppRepository private constructor(context: Context) {
 
+    private val appContext: Context = context.applicationContext
     private val db = AppDatabase.getDatabase(context)
     private val userDao = db.userDao()
     private val doctorDao = db.doctorDao()
@@ -255,11 +265,22 @@ class AppRepository private constructor(context: Context) {
         )
         appointmentDao.insertAppointment(entity)
         doctorDao.markSlotBooked(slotId)
+
+        // Schedule automated local Android notifications (15 min and 1 hr before)
+        scheduleAppointmentReminders(
+            appointmentId = aptId,
+            doctorName = doctorName,
+            date = date,
+            time = time
+        )
         return toAppointment(entity)
     }
 
     suspend fun updateAppointmentStatus(appointmentId: String, status: AppointmentStatus) {
         appointmentDao.updateAppointmentStatus(appointmentId, status)
+        if (status == AppointmentStatus.CANCELLED || status == AppointmentStatus.COMPLETED) {
+            cancelAppointmentReminders(appointmentId)
+        }
     }
 
     suspend fun addPrescription(appointmentId: String, prescriptionText: String) {
@@ -270,8 +291,171 @@ class AppRepository private constructor(context: Context) {
         appointmentDao.rescheduleAppointment(appointmentId, newDate, newTime)
     }
 
+    /**
+     * Schedules WorkManager local notification reminders for 1 hour and 15 minutes before an appointment.
+     */
+    fun scheduleAppointmentReminders(
+        appointmentId: String,
+        doctorName: String,
+        date: String,
+        time: String
+    ) {
+        try {
+            val targetEpoch = parseAppointmentEpoch(date, time)
+            val now = System.currentTimeMillis()
+
+            // 1-Hour Reminder
+            val delay1HourMs = (targetEpoch - 60 * 60 * 1000L) - now
+            if (delay1HourMs > 0) {
+                val request1Hour = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
+                    .setInitialDelay(delay1HourMs, TimeUnit.MILLISECONDS)
+                    .setInputData(
+                        workDataOf(
+                            AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
+                            AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
+                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 60
+                        )
+                    )
+                    .addTag("reminder_${appointmentId}_60m")
+                    .build()
+
+                WorkManager.getInstance(appContext).enqueueUniqueWork(
+                    "reminder_${appointmentId}_60m",
+                    ExistingWorkPolicy.REPLACE,
+                    request1Hour
+                )
+            }
+
+            // 15-Minute Reminder
+            val delay15MinMs = (targetEpoch - 15 * 60 * 1000L) - now
+            if (delay15MinMs > 0) {
+                val request15Min = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
+                    .setInitialDelay(delay15MinMs, TimeUnit.MILLISECONDS)
+                    .setInputData(
+                        workDataOf(
+                            AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
+                            AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
+                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 15
+                        )
+                    )
+                    .addTag("reminder_${appointmentId}_15m")
+                    .build()
+
+                WorkManager.getInstance(appContext).enqueueUniqueWork(
+                    "reminder_${appointmentId}_15m",
+                    ExistingWorkPolicy.REPLACE,
+                    request15Min
+                )
+            } else if (targetEpoch > now) {
+                // If booked within the 15-minute window before appointment, schedule immediate reminder
+                val immediateDelay = (targetEpoch - now).coerceAtLeast(3000L)
+                val requestImmediate = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
+                    .setInitialDelay(immediateDelay, TimeUnit.MILLISECONDS)
+                    .setInputData(
+                        workDataOf(
+                            AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
+                            AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
+                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 15
+                        )
+                    )
+                    .addTag("reminder_${appointmentId}_15m")
+                    .build()
+
+                WorkManager.getInstance(appContext).enqueueUniqueWork(
+                    "reminder_${appointmentId}_15m",
+                    ExistingWorkPolicy.REPLACE,
+                    requestImmediate
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AppRepository", "Error scheduling appointment reminders", e)
+        }
+    }
+
+    /**
+     * Cancels any scheduled reminders for the given appointment.
+     */
+    fun cancelAppointmentReminders(appointmentId: String) {
+        try {
+            WorkManager.getInstance(appContext).cancelUniqueWork("reminder_${appointmentId}_60m")
+            WorkManager.getInstance(appContext).cancelUniqueWork("reminder_${appointmentId}_15m")
+        } catch (e: Exception) {
+            android.util.Log.e("AppRepository", "Error cancelling appointment reminders", e)
+        }
+    }
+
+    private fun parseAppointmentEpoch(dateStr: String, timeStr: String): Long {
+        val calendar = Calendar.getInstance()
+        val trimmedDate = dateStr.trim()
+        val trimmedTime = timeStr.trim()
+
+        var dateSet = false
+        if (trimmedDate.equals("Today", ignoreCase = true)) {
+            dateSet = true
+        } else if (trimmedDate.equals("Tomorrow", ignoreCase = true)) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            dateSet = true
+        } else {
+            val dateFormats = listOf(
+                "dd MMM yyyy",
+                "d MMM yyyy",
+                "yyyy-MM-dd",
+                "dd/MM/yyyy",
+                "MM/dd/yyyy",
+                "MMM dd, yyyy"
+            )
+            for (format in dateFormats) {
+                try {
+                    val sdf = SimpleDateFormat(format, Locale.ENGLISH)
+                    sdf.isLenient = true
+                    val parsed = sdf.parse(trimmedDate)
+                    if (parsed != null) {
+                        val tempCal = Calendar.getInstance().apply { time = parsed }
+                        calendar.set(Calendar.YEAR, tempCal.get(Calendar.YEAR))
+                        calendar.set(Calendar.MONTH, tempCal.get(Calendar.MONTH))
+                        calendar.set(Calendar.DAY_OF_MONTH, tempCal.get(Calendar.DAY_OF_MONTH))
+                        dateSet = true
+                        break
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
+        val timeFormats = listOf(
+            "hh:mm a",
+            "h:mm a",
+            "HH:mm",
+            "H:mm"
+        )
+        for (format in timeFormats) {
+            try {
+                val sdf = SimpleDateFormat(format, Locale.ENGLISH)
+                sdf.isLenient = true
+                val parsed = sdf.parse(trimmedTime)
+                if (parsed != null) {
+                    val tempCal = Calendar.getInstance().apply { time = parsed }
+                    calendar.set(Calendar.HOUR_OF_DAY, tempCal.get(Calendar.HOUR_OF_DAY))
+                    calendar.set(Calendar.MINUTE, tempCal.get(Calendar.MINUTE))
+                    calendar.set(Calendar.SECOND, 0)
+                    calendar.set(Calendar.MILLISECOND, 0)
+                    return calendar.timeInMillis
+                }
+            } catch (_: Exception) {}
+        }
+
+        // Fallback default: if date/time could not be parsed, default to 2 hours in the future
+        return System.currentTimeMillis() + 2 * 60 * 60 * 1000L
+    }
+
     suspend fun cancelAppointment(appointmentId: String) {
         appointmentDao.cancelAppointment(appointmentId)
+        cancelAppointmentReminders(appointmentId)
     }
 
     private suspend fun seedAvenSampleData() {
