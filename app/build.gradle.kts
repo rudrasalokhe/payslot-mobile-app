@@ -5,6 +5,45 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+// Auto-generate fallback google-services.json for local/CI development if missing
+val googleServicesFile = file("google-services.json")
+if (!googleServicesFile.exists()) {
+    googleServicesFile.writeText(
+        """
+        {
+          "project_info": {
+            "project_number": "100000000000",
+            "project_id": "docdirect-app",
+            "storage_bucket": "docdirect-app.appspot.com"
+          },
+          "client": [
+            {
+              "client_info": {
+                "mobilesdk_app_id": "1:100000000000:android:0123456789abcdef012345",
+                "android_client_info": {
+                  "package_name": "com.docdirect.app"
+                }
+              },
+              "oauth_client": [],
+              "api_key": [
+                {
+                  "current_key": "AIzaSyDummyKeyForDocDirectTesting0000"
+                }
+              ],
+              "services": {
+                "appinvite_service": {
+                  "other_platform_oauth_client": []
+                }
+              }
+            }
+          ],
+          "configuration_version": "1"
+        }
+        """.trimIndent()
+    )
+}
+
+
 android {
     namespace = "com.docdirect.app"
     compileSdk = 34
