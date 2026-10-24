@@ -286,6 +286,8 @@ fun AvenRecordsScreen(
     if (showPatientPicker) {
         AlertDialog(
             onDismissRequest = { showPatientPicker = false },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Select Profile", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -325,6 +327,8 @@ fun AvenRecordsScreen(
 
         AlertDialog(
             onDismissRequest = { showUploadModal = false },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Upload health record", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -380,6 +384,8 @@ fun AvenRecordsScreen(
     showShareModal?.let { record ->
         AlertDialog(
             onDismissRequest = { showShareModal = null },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Share with care", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column {
@@ -431,36 +437,86 @@ fun AvenRecordsScreen(
     recordDetailModal?.let { record ->
         AlertDialog(
             onDismissRequest = { recordDetailModal = null },
-            title = { Text(record.title, fontWeight = FontWeight.Bold, color = AvenInk) },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(AvenMint),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Description, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = record.title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = AvenInk
+                    )
+                }
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Category: ${record.category}", fontSize = 13.sp, color = AvenInk)
-                    Text("Date added: ${record.date}", fontSize = 13.sp, color = AvenInk)
-                    Text("File size: ${record.fileSize}", fontSize = 13.sp, color = AvenMuted)
-                    Text("Status: ${if (record.isSharedWithDoctor) "Shared with Dr Mira Shah" else "Private (vault only)"}", fontSize = 13.sp, color = AvenTeal)
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Category", fontSize = 13.sp, color = AvenMuted)
+                        Text(record.category, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Date added", fontSize = 13.sp, color = AvenMuted)
+                        Text(record.date, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("File size", fontSize = 13.sp, color = AvenMuted)
+                        Text(record.fileSize, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Status", fontSize = 13.sp, color = AvenMuted)
+                        Text(
+                            text = if (record.isSharedWithDoctor) "Shared with Dr Mira Shah" else "Private (vault only)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (record.isSharedWithDoctor) AvenTeal else AvenMuted
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Surface(
-                        color = AvenSoft,
-                        shape = RoundedCornerShape(10.dp),
+                        color = AvenBg,
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Verified cryptographic hash: SHA256:7f9a...3b21. Storage encrypted at rest in local Room SQLite DB.",
-                            modifier = Modifier.padding(10.dp),
-                            fontSize = 11.sp,
-                            color = AvenMuted
-                        )
+                        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.Top) {
+                            Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Verified cryptographic hash: SHA256:7f9a...3b21. Storage encrypted at rest in local Room SQLite DB.",
+                                fontSize = 11.sp,
+                                color = AvenMuted,
+                                lineHeight = 16.sp
+                            )
+                        }
                     }
                 }
             },
             confirmButton = {
-                Button(onClick = { recordDetailModal = null }, colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)) {
-                    Text("Download File")
+                Button(
+                    onClick = { recordDetailModal = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Download File", color = AvenWhite, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { recordDetailModal = null }) {
-                    Text("Close", color = AvenMuted)
+                    Text("Close", color = AvenMuted, fontWeight = FontWeight.SemiBold)
                 }
             }
         )

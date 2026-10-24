@@ -297,6 +297,8 @@ fun AvenProfileScreen(
     // Family Profiles Modal
     if (showFamilyModal) {
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showFamilyModal = false },
             title = { Text("Family Profiles (${familyMembers.size})", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
@@ -347,6 +349,8 @@ fun AvenProfileScreen(
         var memberAge by remember { mutableStateOf("56") }
 
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showAddFamilyModal = false },
             title = { Text("Add Family Member", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
@@ -408,6 +412,8 @@ fun AvenProfileScreen(
     // Receipts & Invoices Modal
     if (showInvoiceModal) {
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showInvoiceModal = false },
             title = {
                 Row(
@@ -872,6 +878,8 @@ Eligible for healthcare deduction under Sec 80D.
     // Notifications Feed Modal
     if (showNotificationsModal) {
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showNotificationsModal = false },
             title = { Text("Notifications", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
@@ -912,6 +920,8 @@ Eligible for healthcare deduction under Sec 80D.
     // Device Check Modal
     if (showDeviceCheckModal) {
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showDeviceCheckModal = false },
             title = { Text("Device Readiness Check", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
@@ -944,6 +954,8 @@ Eligible for healthcare deduction under Sec 80D.
     // Saved Doctors Modal
     if (showSavedDoctorsModal) {
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showSavedDoctorsModal = false },
             title = { Text("Saved Doctors", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
@@ -986,6 +998,8 @@ Eligible for healthcare deduction under Sec 80D.
     // Settings Modal
     if (showSettingsModal) {
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showSettingsModal = false },
             title = { Text("Settings & Privacy", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
@@ -1007,6 +1021,8 @@ Eligible for healthcare deduction under Sec 80D.
     // Support Modal
     if (showSupportModal) {
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showSupportModal = false },
             title = { Text("Help & Support", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
@@ -1033,6 +1049,8 @@ Eligible for healthcare deduction under Sec 80D.
     // Sign out dialog
     if (showSignOutDialog) {
         AlertDialog(
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             onDismissRequest = { showSignOutDialog = false },
             title = { Text("Log out of Aven?", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = { Text("You can sign back in whenever you need. Your appointment history and records remain securely saved.", fontSize = 13.sp, color = AvenMuted) },

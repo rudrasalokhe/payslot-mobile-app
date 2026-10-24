@@ -242,6 +242,8 @@ fun AvenExploreScreen(
     if (showFilterSheet) {
         AlertDialog(
             onDismissRequest = { showFilterSheet = false },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Filter Clinicians", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

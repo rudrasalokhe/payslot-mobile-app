@@ -1,6 +1,5 @@
 package com.docdirect.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -8,52 +7,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
-    primary = AuraPrimary,
-    onPrimary = AuraOnPrimary,
-    primaryContainer = AuraPrimaryContainer,
-    onPrimaryContainer = AuraOnPrimaryContainer,
-    secondary = AuraSecondary,
+    primary = AvenTeal,
+    onPrimary = AvenWhite,
+    primaryContainer = AvenMint,
+    onPrimaryContainer = AvenInk,
+    secondary = AvenTeal,
     onSecondary = Color.White,
-    secondaryContainer = AuraSecondaryContainer,
-    onSecondaryContainer = AuraOnSecondaryContainer,
-    tertiary = AuraTertiary,
+    secondaryContainer = AvenMint,
+    onSecondaryContainer = AvenInk,
+    tertiary = AvenBlue,
     onTertiary = Color.White,
-    background = AuraBackground,
-    surface = AuraSurface,
-    surfaceVariant = AuraSurfaceContainerHighest,
-    onBackground = AuraOnSurface,
-    onSurface = AuraOnSurface,
-    onSurfaceVariant = AuraOnSurfaceVariant,
-    outline = AuraOutline,
-    outlineVariant = AuraOutlineVariant,
-    error = AuraError
+    background = AvenBg,
+    surface = AvenWhite,
+    surfaceVariant = AvenSoft,
+    surfaceContainer = AvenBg,
+    surfaceContainerHigh = AvenWhite,
+    surfaceContainerHighest = AvenSoft,
+    onBackground = AvenInk,
+    onSurface = AvenInk,
+    onSurfaceVariant = AvenMuted,
+    outline = AvenLine,
+    outlineVariant = AvenLine,
+    error = AvenRed
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = AuraInversePrimary,
-    onPrimary = AuraOnSurface,
-    primaryContainer = AuraPrimary,
-    onPrimaryContainer = AuraOnPrimaryContainer,
-    secondary = AuraSecondaryFixedDim,
-    onSecondary = AuraOnSurface,
-    secondaryContainer = AuraSecondary,
-    onSecondaryContainer = AuraSecondaryContainer,
-    tertiary = Color(0xFF93CCFF),
-    onTertiary = Color(0xFF001D31),
-    background = AuraInverseSurface,
-    surface = Color(0xFF1E2638),
-    surfaceVariant = Color(0xFF333E54),
-    onBackground = AuraInverseOnSurface,
-    onSurface = AuraInverseOnSurface,
-    onSurfaceVariant = Color(0xFFB0BDBC),
-    outline = AuraOutlineVariant,
-    outlineVariant = Color(0xFF4A5654),
-    error = Color(0xFFFFB4AB)
-)
+// Aven Design System maintains a consistent clinical light palette across all system themes
+private val DarkColorScheme = LightColorScheme
 
 @Composable
 fun DocDirectTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme

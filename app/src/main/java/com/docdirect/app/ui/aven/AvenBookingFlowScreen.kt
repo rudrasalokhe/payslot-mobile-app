@@ -1134,6 +1134,8 @@ fun AvenBookingFlowScreen(
     if (paymentErrorMessage != null) {
         AlertDialog(
             onDismissRequest = { paymentErrorMessage = null },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Payment Notice", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = { Text(paymentErrorMessage ?: "", color = AvenInk, fontSize = 14.sp) },
             confirmButton = {

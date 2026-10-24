@@ -406,6 +406,8 @@ fun AvenVisitsScreen(
     viewingAppointmentDetail?.let { apt ->
         AlertDialog(
             onDismissRequest = { viewingAppointmentDetail = null },
+            containerColor = AvenBg,
+            shape = RoundedCornerShape(28.dp),
             title = null,
             text = {
                 Column(
@@ -578,10 +580,11 @@ fun AvenVisitsScreen(
                     OutlinedButton(
                         onClick = { showDeviceCheckDialog = true },
                         shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = AvenWhite),
                         border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
-                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
-                        Text("Check your device", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                        Text("Check your device", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
                     }
 
                     Box(
@@ -591,10 +594,10 @@ fun AvenVisitsScreen(
                                 viewingAppointmentDetail = null
                                 managingAppointment = apt
                             }
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Reschedule or cancel", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AvenTeal)
+                        Text("Reschedule or cancel", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
                     }
                 }
             },
@@ -607,6 +610,8 @@ fun AvenVisitsScreen(
     if (showDeviceCheckDialog) {
         AlertDialog(
             onDismissRequest = { showDeviceCheckDialog = false },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Device Check", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -639,6 +644,8 @@ fun AvenVisitsScreen(
     managingAppointment?.let { apt ->
         AlertDialog(
             onDismissRequest = { managingAppointment = null },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Manage Appointment", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -683,6 +690,8 @@ fun AvenVisitsScreen(
     showRescheduleDialog?.let { apt ->
         AlertDialog(
             onDismissRequest = { showRescheduleDialog = null },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Reschedule appointment", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column {
@@ -729,6 +738,8 @@ fun AvenVisitsScreen(
     showCancelDialog?.let { apt ->
         AlertDialog(
             onDismissRequest = { showCancelDialog = null },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("Cancel appointment?", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column {
@@ -776,6 +787,8 @@ fun AvenVisitsScreen(
 
         AlertDialog(
             onDismissRequest = { showRatingDialog = null },
+            containerColor = AvenWhite,
+            shape = RoundedCornerShape(24.dp),
             title = { Text("How did it feel?", fontWeight = FontWeight.Bold, color = AvenInk) },
             text = {
                 Column {
