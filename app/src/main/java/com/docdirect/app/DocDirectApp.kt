@@ -193,7 +193,7 @@ fun DocDirectApp() {
                     },
                     onStartVideoCall = { aptId, doctorName ->
                         val encodedName = URLEncoder.encode(doctorName, "UTF-8")
-                        navController.navigate("video_call/$aptId/$encodedName")
+                        navController.navigate("video_call/$aptId/$encodedName?isDoctor=false")
                     },
                     onOpenChat = { aptId ->
                         navController.navigate("chat/$aptId")
@@ -275,7 +275,7 @@ fun DocDirectApp() {
                     },
                     onStartVideoCall = { aptId, doctorName ->
                         val encodedName = URLEncoder.encode(doctorName, "UTF-8")
-                        navController.navigate("video_call/$aptId/$encodedName")
+                        navController.navigate("video_call/$aptId/$encodedName?isDoctor=false")
                     },
                     onOpenChat = { aptId ->
                         navController.navigate("chat/$aptId")
@@ -337,7 +337,7 @@ fun DocDirectApp() {
                     onNavigateBack = { navController.popBackStack() },
                     onStartVideoCall = { aptId, patientName ->
                         val encodedName = URLEncoder.encode(patientName, "UTF-8")
-                        navController.navigate("video_call/$aptId/$encodedName")
+                        navController.navigate("video_call/$aptId/$encodedName?isDoctor=true")
                     },
                     onOpenChat = { aptId ->
                         navController.navigate("chat/$aptId")
@@ -354,18 +354,23 @@ fun DocDirectApp() {
 
             // ===== REAL-TIME AGORA RTC VIDEO CALL =====
             composable(
-                "video_call/{appointmentId}/{remoteUserName}",
+                "video_call/{appointmentId}/{remoteUserName}?isDoctor={isDoctor}",
                 arguments = listOf(
                     navArgument("appointmentId") { type = NavType.StringType },
-                    navArgument("remoteUserName") { type = NavType.StringType }
+                    navArgument("remoteUserName") { type = NavType.StringType },
+                    navArgument("isDoctor") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
                 )
             ) { backStackEntry ->
                 val aptId = backStackEntry.arguments?.getString("appointmentId") ?: ""
                 val remoteNameEncoded = backStackEntry.arguments?.getString("remoteUserName") ?: ""
                 val remoteName = try { URLDecoder.decode(remoteNameEncoded, "UTF-8") } catch (e: Exception) { remoteNameEncoded }
-                val isDoctor = authViewModel.getCurrentUserRole() == UserRole.DOCTOR
-                val localUserId = authViewModel.getCurrentUserId().ifBlank { patientViewModel.currentUserId }
-                val localUserName = authViewModel.getCurrentUserName().ifBlank { patientViewModel.currentUserName.ifBlank { "Patient" } }
+                val isDoctorArg = backStackEntry.arguments?.getBoolean("isDoctor") ?: false
+                val isDoctor = isDoctorArg || authViewModel.getCurrentUserRole() == UserRole.DOCTOR
+                val localUserId = if (isDoctor) "doctor_mira_shah" else authViewModel.getCurrentUserId().ifBlank { patientViewModel.currentUserId }
+                val localUserName = if (isDoctor) "Dr. Mira Shah" else authViewModel.getCurrentUserName().ifBlank { patientViewModel.currentUserName.ifBlank { "Patient" } }
 
                 AgoraVideoCallScreen(
                     appointmentId = aptId,
