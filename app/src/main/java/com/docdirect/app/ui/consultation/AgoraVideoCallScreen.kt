@@ -1,10 +1,15 @@
 package com.docdirect.app.ui.consultation
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
 import android.view.TextureView
 import android.view.ViewGroup
+import android.webkit.PermissionRequest
+import android.webkit.WebChromeClient
+import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,6 +42,7 @@ import com.docdirect.app.ui.theme.*
 import io.agora.rtc2.*
 import io.agora.rtc2.video.VideoCanvas
 import io.agora.rtc2.video.VideoEncoderConfiguration
+import java.net.URLEncoder
 import kotlinx.coroutines.delay
 
 private const val TAG = "AgoraVideoCallScreen"
@@ -67,6 +73,18 @@ fun AgoraVideoCallScreen(
     var connectionStatus by remember { mutableStateOf("Connecting to room...") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var permissionsGranted by remember { mutableStateOf(false) }
+    var useWebRtcRoom by remember { mutableStateOf(false) }
+
+    LaunchedEffect(useWebRtcRoom) {
+        if (useWebRtcRoom) {
+            try {
+                engine?.stopPreview()
+                engine?.leaveChannel()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error pausing Agora engine for WebRTC", e)
+            }
+        }
+    }
 
     // Required permissions for camera and microphone
     val requiredPermissions = arrayOf(
@@ -329,6 +347,92 @@ fun AgoraVideoCallScreen(
             .fillMaxSize()
             .background(Color(0xFF07191B)) // Deep dark teal/slate video backdrop
     ) {
+        if (useWebRtcRoom) {
+            // Free WebRTC Room (Jitsi Meet Powered - 100% Free & Zero Tokens Required)
+            val webRtcUrl = remember(channelName, localUserName) {
+                val encodedUser = try { URLEncoder.encode(localUserName, "UTF-8") } catch (e: Exception) { localUserName }
+                "https://meet.jit.si/$channelName#userInfo.displayName=\"$encodedUser\"&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false"
+            }
+
+            AndroidView(
+                factory = { ctx ->
+                    WebView(ctx).apply {
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        settings.databaseEnabled = true
+                        settings.mediaPlaybackRequiresUserGesture = false
+                        settings.allowFileAccess = true
+                        settings.userAgentString = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onPermissionRequest(request: PermissionRequest) {
+                                request.grant(request.resources)
+                            }
+                        }
+                        loadUrl(webRtcUrl)
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Top Status Bar Overlay with "Open in Chrome" & "End Call"
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = AvenDeep.copy(alpha = 0.90f),
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(AvenLime)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Free WebRTC Live · $remoteUserName",
+                            color = AvenWhite,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Encrypted Peer Room: $channelName",
+                            color = AvenMuted,
+                            fontSize = 10.sp
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webRtcUrl))
+                            context.startActivity(intent)
+                        }
+                    ) {
+                        Icon(Icons.Default.OpenInBrowser, contentDescription = "Open in Chrome", tint = AvenLime)
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Button(
+                        onClick = onCallEnded,
+                        colors = ButtonDefaults.buttonColors(containerColor = AvenRed),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text("Exit", color = AvenWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        } else {
         // ================= 1. REMOTE VIDEO FEED =================
         if (remoteUid != -1 && engine != null) {
             // Live Agora Remote Peer Video
@@ -451,19 +555,33 @@ fun AgoraVideoCallScreen(
                     }
                 }
 
-                // Interactive consultation connection button
-                Spacer(modifier = Modifier.height(24.dp))
+                // 1-Tap Switch to 100% Free WebRTC Video Call (No Tokens / 100% Free)
+                Spacer(modifier = Modifier.height(20.dp))
                 Button(
+                    onClick = {
+                        useWebRtcRoom = true
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenMint)
+                ) {
+                    Icon(Icons.Default.VideoCall, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Switch to Free WebRTC Video Call (No Tokens)", color = AvenTeal, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+
+                // Interactive local simulation button
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
                     onClick = {
                         isSimulatedRemote = true
                         connectionStatus = "Connected"
                     },
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenLime.copy(alpha = 0.6f))
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = AvenWhite, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Enter Consultation Room", color = AvenWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = AvenLime, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Simulate Connected Room", color = AvenLime, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -746,6 +864,7 @@ fun AgoraVideoCallScreen(
                     )
                 }
             }
+        }
         }
     }
 
