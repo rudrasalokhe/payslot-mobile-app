@@ -239,7 +239,7 @@ fun AvenDoctorProfileSetupScreen(
                     value = license,
                     onValueChange = { license = it; validationError = null },
                     placeholder = { Text("e.g. MCI-78492-MED", color = AvenMuted, fontSize = 14.sp) },
-                    leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null, tint = AvenMuted) },
+                    leadingIcon = { Icon(Icons.Default.AccountBox, contentDescription = null, tint = AvenMuted) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(

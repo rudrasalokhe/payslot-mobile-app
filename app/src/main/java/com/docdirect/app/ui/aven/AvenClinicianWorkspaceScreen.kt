@@ -752,7 +752,7 @@ fun AvenDoctorProfileEditDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
                         modifier = Modifier.weight(1.5f).height(50.dp)
                     ) {
-                        Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Save Changes", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
                     }

@@ -307,7 +307,7 @@ fun AvenWelcomeScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.AddCircle, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Register & Set Up New Doctor Profile", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
                         }

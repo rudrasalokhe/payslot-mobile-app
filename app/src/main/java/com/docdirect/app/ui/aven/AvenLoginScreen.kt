@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -307,7 +308,7 @@ fun AvenLoginScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.AddCircle, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.Add, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Are you a doctor? Set up clinician profile", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
                     }
