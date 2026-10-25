@@ -73,7 +73,7 @@ fun AgoraVideoCallScreen(
     var connectionStatus by remember { mutableStateOf("Connecting to room...") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var permissionsGranted by remember { mutableStateOf(false) }
-    var useWebRtcRoom by remember { mutableStateOf(false) }
+    var useWebRtcRoom by remember { mutableStateOf(true) }
 
     LaunchedEffect(useWebRtcRoom) {
         if (useWebRtcRoom) {
@@ -109,9 +109,9 @@ fun AgoraVideoCallScreen(
         }
     }
 
-    // Initialize and join Agora RTC Engine
-    DisposableEffect(permissionsGranted) {
-        if (!permissionsGranted) return@DisposableEffect onDispose { }
+    // Initialize and join Agora RTC Engine only if user explicitly toggles away from free WebRTC
+    DisposableEffect(permissionsGranted, useWebRtcRoom) {
+        if (!permissionsGranted || useWebRtcRoom) return@DisposableEffect onDispose { }
 
         var rtcEngine: RtcEngine? = null
 
@@ -351,7 +351,7 @@ fun AgoraVideoCallScreen(
             // Free WebRTC Room (Jitsi Meet Powered - 100% Free & Zero Tokens Required)
             val webRtcUrl = remember(channelName, localUserName) {
                 val encodedUser = try { URLEncoder.encode(localUserName, "UTF-8") } catch (e: Exception) { localUserName }
-                "https://meet.jit.si/$channelName#userInfo.displayName=\"$encodedUser\"&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false"
+                "https://meet.jit.si/$channelName#userInfo.displayName=\"$encodedUser\"&config.disableDeepLinking=true&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false"
             }
 
             AndroidView(
