@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -51,12 +52,14 @@ fun AvenVerifyScreen(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Request focus on entry and trigger OTP send
+    // Request focus on entry and trigger OTP send & open software keyboard
     LaunchedEffect(Unit) {
         if (email.isNotBlank()) {
             authViewModel.sendOtp(email)
         }
+        kotlinx.coroutines.delay(200)
         focusRequester.requestFocus()
+        keyboardController?.show()
     }
 
     // Clear error message when user modifies input
@@ -197,7 +200,7 @@ fun AvenVerifyScreen(
                     }
                 },
                 keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.NumberPassword,
+                    keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
@@ -214,41 +217,53 @@ fun AvenVerifyScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester),
-                decorationBox = {
-                    Row(
+                decorationBox = { innerTextField ->
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { focusRequester.requestFocus() },
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .clickable {
+                                focusRequester.requestFocus()
+                                keyboardController?.show()
+                            }
                     ) {
-                        val isError = verificationState is OtpVerificationState.Error
-                        for (index in 0 until 6) {
-                            val digit = otpValue.getOrNull(index)?.toString() ?: ""
-                            val isCurrentActive = (index == otpValue.length) || (index == 5 && otpValue.length == 6)
+                        // Crucial: Must render innerTextField so Android IME attaches and keyboard opens
+                        Box(modifier = Modifier.size(1.dp).alpha(0f)) {
+                            innerTextField()
+                        }
 
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(64.dp),
-                                shape = RoundedCornerShape(13.dp),
-                                color = AvenWhite,
-                                border = androidx.compose.foundation.BorderStroke(
-                                    width = if (isCurrentActive) 1.5.dp else 1.dp,
-                                    color = when {
-                                        isError -> AvenRed
-                                        isCurrentActive -> AvenTeal
-                                        digit.isNotEmpty() -> AvenInk
-                                        else -> AvenLine
-                                    }
-                                )
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = digit,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isError) AvenRed else AvenInk
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val isError = verificationState is OtpVerificationState.Error
+                            for (index in 0 until 6) {
+                                val digit = otpValue.getOrNull(index)?.toString() ?: ""
+                                val isCurrentActive = (index == otpValue.length) || (index == 5 && otpValue.length == 6)
+
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(64.dp),
+                                    shape = RoundedCornerShape(13.dp),
+                                    color = AvenWhite,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = if (isCurrentActive) 1.5.dp else 1.dp,
+                                        color = when {
+                                            isError -> AvenRed
+                                            isCurrentActive -> AvenTeal
+                                            digit.isNotEmpty() -> AvenInk
+                                            else -> AvenLine
+                                        }
                                     )
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = digit,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isError) AvenRed else AvenInk
+                                        )
+                                    }
                                 }
                             }
                         }
