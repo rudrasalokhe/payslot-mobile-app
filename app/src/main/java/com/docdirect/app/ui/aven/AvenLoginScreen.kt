@@ -36,7 +36,7 @@ fun AvenLoginScreen(
     onNavigateToSignUp: () -> Unit,
     onForgotPassword: () -> Unit = {},
     onDoctorSignup: () -> Unit = {},
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: (role: com.docdirect.app.data.model.UserRole) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -320,8 +320,8 @@ fun AvenLoginScreen(
             // Log in button
             Button(
                 onClick = {
-                    authViewModel.login(email.trim(), password) { _ ->
-                        onLoginSuccess()
+                    authViewModel.login(email.trim(), password) { role ->
+                        onLoginSuccess(role)
                     }
                 },
                 enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),

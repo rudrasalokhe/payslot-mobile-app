@@ -441,9 +441,9 @@ fun AvenDoctorProfileSetupScreen(
                         }
 
                         authViewModel.registerDoctor(
-                            name = formattedName,
-                            email = email,
-                            password = password,
+                            name = formattedName.trim(),
+                            email = email.trim(),
+                            password = password.trim(),
                             license = license,
                             specialty = specialty,
                             qualification = qualification.ifBlank { "MBBS, MD" },

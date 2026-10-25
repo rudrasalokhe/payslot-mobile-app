@@ -276,7 +276,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         hospital: String,
         onSuccess: () -> Unit
     ) {
-        if (name.isBlank() || email.isBlank() || password.isBlank() || license.isBlank() || specialty.isBlank()) {
+        val cleanEmail = email.trim().lowercase()
+        val cleanName = name.trim()
+        val cleanPassword = password.trim()
+        if (cleanName.isBlank() || cleanEmail.isBlank() || cleanPassword.isBlank() || license.isBlank() || specialty.isBlank()) {
             _errorMessage.value = "Please fill in all required doctor profile fields."
             return
         }
@@ -284,25 +287,24 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            val userResult = repository.registerUser(name, email, password, UserRole.DOCTOR)
-            _isLoading.value = false
+            val userResult = repository.registerUser(cleanName, cleanEmail, cleanPassword, UserRole.DOCTOR)
 
             userResult.onSuccess { user ->
-                viewModelScope.launch {
-                    repository.registerDoctorProfile(
-                        userId = user.id,
-                        name = name,
-                        license = license,
-                        specialty = specialty,
-                        qualification = qualification,
-                        experienceYears = experienceYears,
-                        fee = fee,
-                        bio = bio,
-                        hospital = hospital
-                    )
-                    onSuccess()
-                }
+                repository.registerDoctorProfile(
+                    userId = user.id,
+                    name = cleanName,
+                    license = license.trim(),
+                    specialty = specialty.trim(),
+                    qualification = qualification.trim(),
+                    experienceYears = experienceYears,
+                    fee = fee,
+                    bio = bio.trim(),
+                    hospital = hospital.trim()
+                )
+                _isLoading.value = false
+                onSuccess()
             }.onFailure { error ->
+                _isLoading.value = false
                 _errorMessage.value = error.message ?: "Doctor registration failed."
             }
         }

@@ -5,12 +5,15 @@ import android.util.Log
 import com.docdirect.app.data.local.AppDatabase
 import com.docdirect.app.data.local.entity.AppointmentEntity
 import com.docdirect.app.data.local.entity.DoctorEntity
+import com.docdirect.app.data.local.entity.UserEntity
 import com.docdirect.app.data.model.AppointmentStatus
+import com.docdirect.app.data.model.UserRole
 import com.google.firebase.database.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 object FirebaseSyncManager {
     private const val TAG = "FirebaseSyncManager"
@@ -30,6 +33,7 @@ object FirebaseSyncManager {
 
     private val doctorsRef: DatabaseReference by lazy { database.getReference("doctors") }
     private val appointmentsRef: DatabaseReference by lazy { database.getReference("appointments") }
+    private val usersRef: DatabaseReference by lazy { database.getReference("users") }
 
     fun init(context: Context) {
         if (isInitialized) return
@@ -38,8 +42,30 @@ object FirebaseSyncManager {
         val db = AppDatabase.getDatabase(context)
         val doctorDao = db.doctorDao()
         val appointmentDao = db.appointmentDao()
+        val userDao = db.userDao()
 
-        // 1. Listen for real-time doctor profile updates across phones
+        // 1. Listen for real-time user accounts (doctors & patients across phones)
+        try {
+            usersRef.addChildEventListener(object : ChildEventListener {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    handleUserSnapshot(snapshot, userDao)
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                    handleUserSnapshot(snapshot, userDao)
+                }
+
+                override fun onChildRemoved(snapshot: DataSnapshot) {}
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                override fun onCancelled(error: DatabaseError) {
+                    Log.w(TAG, "User sync cancelled: ${error.message}")
+                }
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to attach user listener: ${e.message}")
+        }
+
+        // 2. Listen for real-time doctor profile updates across phones
         try {
             doctorsRef.addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -221,6 +247,89 @@ object FirebaseSyncManager {
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to push prescription to Firebase: ${e.message}")
             }
+        }
+    }
+
+    private fun handleUserSnapshot(snapshot: DataSnapshot, userDao: com.docdirect.app.data.local.dao.UserDao) {
+        scope.launch {
+            try {
+                val id = snapshot.child("id").getValue(String::class.java) ?: snapshot.key ?: return@launch
+                val name = snapshot.child("name").getValue(String::class.java) ?: return@launch
+                val email = snapshot.child("email").getValue(String::class.java)?.lowercase()?.trim() ?: return@launch
+                val passwordHash = snapshot.child("passwordHash").getValue(String::class.java) ?: return@launch
+                val roleStr = snapshot.child("role").getValue(String::class.java) ?: UserRole.PATIENT.name
+                val role = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.PATIENT }
+
+                val user = UserEntity(
+                    id = id,
+                    name = name,
+                    email = email,
+                    passwordHash = passwordHash,
+                    role = role
+                )
+                userDao.insertUser(user)
+                Log.d(TAG, "User synced from cloud: ${user.email} (${user.role})")
+            } catch (e: Exception) {
+                Log.w(TAG, "Error parsing user snapshot: ${e.message}")
+            }
+        }
+    }
+
+    fun syncUserToCloud(user: UserEntity) {
+        scope.launch {
+            try {
+                val emailKey = user.email.replace(".", "_").replace("@", "_at_")
+                val data = mapOf(
+                    "id" to user.id,
+                    "name" to user.name,
+                    "email" to user.email.lowercase().trim(),
+                    "passwordHash" to user.passwordHash,
+                    "role" to user.role.name,
+                    "createdAt" to user.createdAt
+                )
+                usersRef.child(emailKey).setValue(data)
+                Log.d(TAG, "User account uploaded to cloud: ${user.email} (${user.role})")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to upload user to cloud: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun fetchUserFromCloud(email: String, userDao: com.docdirect.app.data.local.dao.UserDao): UserEntity? {
+        val cleanEmail = email.lowercase().trim()
+        val emailKey = cleanEmail.replace(".", "_").replace("@", "_at_")
+        return suspendCancellableCoroutine { continuation ->
+            usersRef.child(emailKey).addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        try {
+                            val id = snapshot.child("id").getValue(String::class.java) ?: ""
+                            val name = snapshot.child("name").getValue(String::class.java) ?: ""
+                            val savedEmail = snapshot.child("email").getValue(String::class.java) ?: cleanEmail
+                            val pwdHash = snapshot.child("passwordHash").getValue(String::class.java) ?: ""
+                            val roleStr = snapshot.child("role").getValue(String::class.java) ?: UserRole.PATIENT.name
+                            val role = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.PATIENT }
+                            val user = UserEntity(
+                                id = id,
+                                name = name,
+                                email = savedEmail.lowercase().trim(),
+                                passwordHash = pwdHash,
+                                role = role
+                            )
+                            scope.launch { userDao.insertUser(user) }
+                            continuation.resumeWith(Result.success(user))
+                            return
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Error parsing cloud user: ${e.message}")
+                        }
+                    }
+                    continuation.resumeWith(Result.success(null))
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    continuation.resumeWith(Result.success(null))
+                }
+            })
         }
     }
 }

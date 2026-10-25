@@ -160,10 +160,10 @@ fun DocDirectApp() {
                     onNavigateToSignUp = { navController.navigate("aven_signup") },
                     onForgotPassword = { navController.navigate("aven_forgot_password") },
                     onDoctorSignup = { navController.navigate("aven_doctor_signup") },
-                    onLoginSuccess = {
+                    onLoginSuccess = { role ->
                         patientViewModel.refreshUserSession()
                         doctorViewModel.refreshDoctorSession()
-                        if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) {
+                        if (role == UserRole.DOCTOR || authViewModel.getCurrentUserRole() == UserRole.DOCTOR) {
                             navController.navigate("aven_clinician") {
                                 popUpTo(0)
                             }

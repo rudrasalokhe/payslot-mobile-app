@@ -9,14 +9,13 @@ class SessionManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("DocDirectSession", Context.MODE_PRIVATE)
 
     fun saveUserSession(userId: String, name: String, email: String, role: UserRole) {
-        prefs.edit().apply {
-            putString(KEY_USER_ID, userId)
-            putString(KEY_NAME, name)
-            putString(KEY_EMAIL, email)
-            putString(KEY_ROLE, role.name)
-            putBoolean(KEY_IS_LOGGED_IN, true)
-            apply()
-        }
+        prefs.edit()
+            .putString(KEY_USER_ID, userId)
+            .putString(KEY_NAME, name)
+            .putString(KEY_EMAIL, email)
+            .putString(KEY_ROLE, role.name)
+            .putBoolean(KEY_IS_LOGGED_IN, true)
+            .commit()
     }
 
     fun isLoggedIn(): Boolean {

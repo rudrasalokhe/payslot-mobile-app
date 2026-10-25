@@ -80,7 +80,8 @@ class AppRepository private constructor(context: Context) {
         password: String,
         role: UserRole
     ): Result<UserEntity> {
-        val existing = userDao.getUserByEmail(email.lowercase().trim())
+        val cleanEmail = email.lowercase().trim()
+        val existing = userDao.getUserByEmail(cleanEmail)
         if (existing != null) {
             return Result.failure(Exception("An account with this email already exists."))
         }
@@ -90,12 +91,13 @@ class AppRepository private constructor(context: Context) {
         val newUser = UserEntity(
             id = userId,
             name = name.trim(),
-            email = email.lowercase().trim(),
+            email = cleanEmail,
             passwordHash = pwdHash,
             role = role
         )
 
         userDao.insertUser(newUser)
+        com.docdirect.app.data.firebase.FirebaseSyncManager.syncUserToCloud(newUser)
         sessionManager.saveUserSession(userId, newUser.name, newUser.email, role)
         return Result.success(newUser)
     }
@@ -130,14 +132,45 @@ class AppRepository private constructor(context: Context) {
     }
 
     suspend fun login(email: String, password: String): Result<UserEntity> {
-        val user = userDao.getUserByEmail(email.lowercase().trim())
-            ?: return Result.failure(Exception("Account not found. Please check your email."))
+        val cleanEmail = email.lowercase().trim()
+        var user = userDao.getUserByEmail(cleanEmail)
+
+        // If not in local Room DB, query Firebase Cloud database
+        if (user == null) {
+            user = com.docdirect.app.data.firebase.FirebaseSyncManager.fetchUserFromCloud(cleanEmail, userDao)
+        }
+
+        if (user == null) {
+            return Result.failure(Exception("Account not found. Please check your email or sign up."))
+        }
 
         if (user.passwordHash != hashPassword(password)) {
             return Result.failure(Exception("Incorrect password. Please try again."))
         }
 
         sessionManager.saveUserSession(user.id, user.name, user.email, user.role)
+
+        // If doctor, verify clinician profile exists in local DB
+        if (user.role == UserRole.DOCTOR) {
+            val existingDoc = doctorDao.getDoctorByIdOrUserId("doc_${user.id}") ?: doctorDao.getDoctorByIdOrUserId(user.id)
+            if (existingDoc == null) {
+                val newDoc = DoctorEntity(
+                    id = "doc_${user.id}",
+                    userId = user.id,
+                    name = user.name,
+                    medicalLicense = "MCI-VERIFIED",
+                    specialty = "General Medicine",
+                    qualification = "MBBS, MD",
+                    experienceYears = 5,
+                    consultationFee = 999.0,
+                    bio = "Clinician practicing on DocDirect.",
+                    hospitalAffiliation = "DocDirect Telehealth",
+                    isAvailable = true
+                )
+                doctorDao.insertDoctor(newDoc)
+            }
+        }
+
         return Result.success(user)
     }
 
