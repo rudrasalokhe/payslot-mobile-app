@@ -111,11 +111,7 @@ public class Utils {
      */
 
     public static String base64Encode(byte[] data) {
-
-        byte[] encodedBytes = Base64.encodeBase64(data);
-
-        return new String(encodedBytes);
-
+        return android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
     }
 
 
@@ -127,9 +123,7 @@ public class Utils {
      */
 
     public static byte[] base64Decode(String data) {
-
-        return Base64.decodeBase64(data.getBytes());
-
+        return android.util.Base64.decode(data, android.util.Base64.NO_WRAP);
     }
 
 
