@@ -15,6 +15,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PaymentManager.init(applicationContext)
+        com.docdirect.app.data.firebase.FirebaseSyncManager.init(applicationContext)
         setContent {
             Surface(
                 modifier = Modifier.fillMaxSize(),

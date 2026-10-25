@@ -126,6 +126,7 @@ class AppRepository private constructor(context: Context) {
             isAvailable = true
         )
         doctorDao.insertDoctor(doctorEntity)
+        com.docdirect.app.data.firebase.FirebaseSyncManager.syncDoctorToCloud(doctorEntity)
     }
 
     suspend fun login(email: String, password: String): Result<UserEntity> {
@@ -202,7 +203,9 @@ class AppRepository private constructor(context: Context) {
     suspend fun toggleDoctorAvailability(doctorId: String, isAvailable: Boolean) {
         val doctor = doctorDao.getDoctorByIdOrUserId(doctorId)
         doctor?.let {
-            doctorDao.updateDoctor(it.copy(isAvailable = isAvailable))
+            val updated = it.copy(isAvailable = isAvailable)
+            doctorDao.updateDoctor(updated)
+            com.docdirect.app.data.firebase.FirebaseSyncManager.syncDoctorToCloud(updated)
         }
     }
 
@@ -257,6 +260,7 @@ class AppRepository private constructor(context: Context) {
                 bio = bio.trim()
             )
             doctorDao.insertDoctor(updated)
+            com.docdirect.app.data.firebase.FirebaseSyncManager.syncDoctorToCloud(updated)
             if (sessionManager.getUserId() == existing.userId || sessionManager.getUserId() == existing.id) {
                 sessionManager.saveUserSession(
                     userId = sessionManager.getUserId() ?: existing.id,
@@ -280,6 +284,7 @@ class AppRepository private constructor(context: Context) {
                 isAvailable = true
             )
             doctorDao.insertDoctor(newDoctor)
+            com.docdirect.app.data.firebase.FirebaseSyncManager.syncDoctorToCloud(newDoctor)
         }
     }
 
@@ -332,6 +337,7 @@ class AppRepository private constructor(context: Context) {
             transactionId = txnId
         )
         appointmentDao.insertAppointment(entity)
+        com.docdirect.app.data.firebase.FirebaseSyncManager.syncAppointmentToCloud(entity)
         doctorDao.markSlotBooked(slotId)
 
         // Schedule automated local Android notifications (15 min and 1 hr before)
@@ -353,6 +359,7 @@ class AppRepository private constructor(context: Context) {
 
     suspend fun addPrescription(appointmentId: String, prescriptionText: String) {
         appointmentDao.addPrescription(appointmentId, prescriptionText)
+        com.docdirect.app.data.firebase.FirebaseSyncManager.syncPrescriptionToCloud(appointmentId, prescriptionText)
     }
 
     suspend fun rescheduleAppointment(appointmentId: String, newDate: String, newTime: String) {
