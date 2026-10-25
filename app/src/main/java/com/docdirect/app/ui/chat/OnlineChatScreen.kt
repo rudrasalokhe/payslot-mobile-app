@@ -1,5 +1,9 @@
 package com.docdirect.app.ui.chat
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,13 +26,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.ChatMessage
 import com.docdirect.app.data.model.UserRole
 import com.docdirect.app.ui.doctor.PrescriptionDialog
 import com.docdirect.app.ui.theme.*
+import com.docdirect.app.utils.PrescriptionPdfGenerator
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,6 +46,8 @@ fun OnlineChatScreen(
     viewModel: ChatViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
+
     // 1. Connect real-time Firebase sync for this appointment conversation
     DisposableEffect(appointmentId) {
         viewModel.startChatSync(appointmentId)
@@ -52,7 +61,6 @@ fun OnlineChatScreen(
 
     val messagesFlow = remember(appointmentId) { viewModel.getMessagesForAppointment(appointmentId) }
     val messages by messagesFlow.collectAsState()
-
     val currentRole by viewModel.currentRole.collectAsState()
 
     val currentUserId = remember { viewModel.getCurrentUserId() }
@@ -61,6 +69,7 @@ fun OnlineChatScreen(
 
     var messageText by remember { mutableStateOf("") }
     var showPrescriptionModal by remember { mutableStateOf(false) }
+    var showUploadModal by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     var isInitialScrollDone by remember(appointmentId) { mutableStateOf(false) }
@@ -313,7 +322,7 @@ fun OnlineChatScreen(
 
                 items(messages, key = { it.id }) { msg ->
                     val isMe = (msg.senderId.isNotBlank() && msg.senderId == currentUserId) || (msg.senderRole == activeRole)
-                    ChatMessageBubble(message = msg, isMe = isMe)
+                    ChatMessageBubble(message = msg, isMe = isMe, appointment = appointment)
                 }
 
                 item(key = "bottom_spacer") { Spacer(modifier = Modifier.height(10.dp)) }
@@ -357,7 +366,7 @@ fun OnlineChatScreen(
                 }
             }
 
-            // Chat Input Bar
+            // Chat Input Bar with Attachment Uploader
             Surface(
                 color = AvenWhite,
                 shadowElevation = 8.dp,
@@ -369,6 +378,20 @@ fun OnlineChatScreen(
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    IconButton(
+                        onClick = { showUploadModal = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.AttachFile,
+                            contentDescription = "Attach lab report or skin photo",
+                            tint = TealPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
                     OutlinedTextField(
                         value = messageText,
                         onValueChange = { messageText = it },
@@ -429,12 +452,128 @@ fun OnlineChatScreen(
             }
         )
     }
+
+    // Modal to attach lab report / skin photo directly to consultation
+    if (showUploadModal) {
+        var docTitle by remember { mutableStateOf("") }
+        var docCategory by remember { mutableStateOf("Lab report") }
+        var attachedUri by remember { mutableStateOf("") }
+
+        val filePicker = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
+            uri?.let {
+                attachedUri = it.toString()
+                val segment = it.lastPathSegment ?: "document"
+                if (docTitle.isBlank()) {
+                    docTitle = segment.substringAfterLast("/").substringAfterLast(":")
+                }
+                Toast.makeText(context, "Attached from device: $docTitle", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showUploadModal = false },
+            title = { Text("Upload Consultation Document", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Attach past blood tests, lab reports, or skin photos so the doctor can review them in real time:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Surface(
+                        onClick = { filePicker.launch("*/*") },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (attachedUri.isNotBlank()) Color(0xFFE6F4EA) else MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                if (attachedUri.isNotBlank()) Icons.Default.CheckCircle else Icons.Default.CloudUpload,
+                                contentDescription = null,
+                                tint = TealPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (attachedUri.isNotBlank()) "File Attached from Device" else "Browse File or Photo",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TealPrimary
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = docTitle,
+                        onValueChange = { docTitle = it },
+                        label = { Text("Document Title") },
+                        placeholder = { Text("e.g. Skin rash photo / Blood test") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Text("Document Type", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf("Lab report", "Blood test", "Skin photo").forEach { cat ->
+                            FilterChip(
+                                selected = docCategory == cat,
+                                onClick = { docCategory = cat },
+                                label = { Text(cat, fontSize = 11.sp) }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (docTitle.isNotBlank()) {
+                            val patientId = if (currentRole == UserRole.PATIENT) senderId else (appointment?.patientId ?: "pat_1")
+                            viewModel.uploadAppointmentDocument(
+                                appointmentId = appointmentId,
+                                patientId = patientId,
+                                title = docTitle,
+                                category = docCategory,
+                                fileSize = "2.0 MB",
+                                fileUri = attachedUri
+                            )
+                            Toast.makeText(context, "Document attached to consultation", Toast.LENGTH_SHORT).show()
+                            showUploadModal = false
+                        }
+                    },
+                    enabled = docTitle.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = TealPrimary)
+                ) {
+                    Text("Upload & Send")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUploadModal = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 private val chatTimeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
 @Composable
-fun ChatMessageBubble(message: ChatMessage, isMe: Boolean) {
+fun ChatMessageBubble(
+    message: ChatMessage,
+    isMe: Boolean,
+    appointment: Appointment? = null
+) {
+    val context = LocalContext.current
     val timeString = remember(message.timestamp) {
         synchronized(chatTimeFormatter) {
             chatTimeFormatter.format(Date(message.timestamp))
@@ -504,6 +643,41 @@ fun ChatMessageBubble(message: ChatMessage, isMe: Boolean) {
                     fontSize = 14.sp,
                     lineHeight = 20.sp
                 )
+
+                // Digital Prescription Download & PDF Export button
+                if (message.isPrescription) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = {
+                            val doctorName = appointment?.doctorName ?: message.senderName
+                            val doctorSpecialty = appointment?.doctorSpecialty ?: "Consultant Physician"
+                            val patientName = appointment?.patientName ?: "Patient"
+                            val consultationDate = appointment?.appointmentDate ?: "Today"
+                            val pdf = PrescriptionPdfGenerator.generatePrescriptionPdf(
+                                context = context,
+                                doctorName = doctorName,
+                                doctorSpecialty = doctorSpecialty,
+                                doctorLicense = "MCI-48921-DERM",
+                                clinicName = "DocDirect Bandra Medical Clinic",
+                                patientName = patientName,
+                                consultationId = appointment?.id ?: "AV-CONS-0925",
+                                consultationDate = consultationDate,
+                                dosageInstructions = message.messageText
+                            )
+                            PrescriptionPdfGenerator.sharePrescriptionPdf(context, pdf)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0284C7),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Download & Share Rx PDF", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }

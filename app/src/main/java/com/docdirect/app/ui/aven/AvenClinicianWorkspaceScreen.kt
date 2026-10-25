@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.platform.LocalContext
+import com.docdirect.app.utils.PrescriptionPdfGenerator
 import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.AppointmentStatus
 import com.docdirect.app.data.model.DoctorProfile
@@ -42,6 +44,7 @@ fun AvenClinicianWorkspaceScreen(
     onStartVideoCall: (appointmentId: String, patientName: String) -> Unit,
     onOpenChat: (appointmentId: String) -> Unit
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val doctor by doctorViewModel.doctorProfile.collectAsState()
     val appointments by doctorViewModel.appointments.collectAsState()
@@ -329,10 +332,40 @@ fun AvenClinicianWorkspaceScreen(
                                 Text("Reported Concerns:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AvenMuted)
                                 Text(activeAppointment.symptoms, fontSize = 13.sp, color = AvenInk)
                                 Spacer(modifier = Modifier.height(6.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.AttachFile, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("1 Document shared: Blood-test-report.pdf", fontSize = 12.sp, color = AvenTeal, fontWeight = FontWeight.Medium)
+                                val attachedRecords by doctorViewModel.getRecordsForAppointment(activeAppointment.id).collectAsState(initial = emptyList())
+                                if (attachedRecords.isNotEmpty()) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("Attached Patient Documents (${attachedRecords.size}):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                                        attachedRecords.forEach { rec ->
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().clickable {
+                                                    val pdf = PrescriptionPdfGenerator.generatePrescriptionPdf(
+                                                        context = context,
+                                                        doctorName = doctor.name.ifBlank { "Dr Mira Shah" },
+                                                        doctorSpecialty = doctor.specialty.ifBlank { "Dermatology" },
+                                                        doctorLicense = doctor.medicalLicense.ifBlank { "MCI-48921-DERM" },
+                                                        clinicName = "DocDirect Medical Clinic",
+                                                        patientName = activeAppointment.patientName,
+                                                        consultationId = activeAppointment.id,
+                                                        consultationDate = activeAppointment.appointmentDate,
+                                                        dosageInstructions = "Attached Consultation Record: ${rec.title} (${rec.category})"
+                                                    )
+                                                    PrescriptionPdfGenerator.sharePrescriptionPdf(context, pdf)
+                                                },
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(Icons.Default.AttachFile, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("${rec.title} (${rec.category})", fontSize = 12.sp, color = AvenTeal, fontWeight = FontWeight.Medium)
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.AttachFile, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Shared: Blood-test-report.pdf (Dermatology Lab)", fontSize = 12.sp, color = AvenTeal, fontWeight = FontWeight.Medium)
+                                    }
                                 }
                             }
                         }
@@ -408,6 +441,30 @@ fun AvenClinicianWorkspaceScreen(
                             Icon(Icons.Default.ReceiptLong, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Sign & Issue Digital Prescription", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                val pdf = PrescriptionPdfGenerator.generatePrescriptionPdf(
+                                    context = context,
+                                    doctorName = doctor.name.ifBlank { "Dr Mira Shah" },
+                                    doctorSpecialty = doctor.specialty.ifBlank { "Dermatologist" },
+                                    doctorLicense = doctor.medicalLicense.ifBlank { "MCI-48921-DERM" },
+                                    clinicName = "DocDirect Bandra Clinic, Mumbai",
+                                    patientName = activeAppointment.patientName,
+                                    consultationId = activeAppointment.id,
+                                    consultationDate = activeAppointment.appointmentDate,
+                                    dosageInstructions = prescriptionText
+                                )
+                                PrescriptionPdfGenerator.sharePrescriptionPdf(context, pdf)
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp), tint = AvenInk)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Export & Share Rx PDF", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AvenInk)
                         }
 
                         if (showSuccessToast) {

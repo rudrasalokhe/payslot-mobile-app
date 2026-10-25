@@ -5,7 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.ChatMessage
+import com.docdirect.app.data.local.entity.RecordEntity
 import com.docdirect.app.data.model.UserRole
+import kotlinx.coroutines.flow.Flow
 import com.docdirect.app.data.repository.AppRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -88,6 +90,37 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 role = UserRole.DOCTOR,
                 text = prescriptionText,
                 isPrescription = true
+            )
+        }
+    }
+
+    fun getRecordsForAppointment(appointmentId: String): Flow<List<RecordEntity>> {
+        return repository.getRecordsForAppointment(appointmentId)
+    }
+
+    fun uploadAppointmentDocument(
+        appointmentId: String,
+        patientId: String,
+        title: String,
+        category: String,
+        fileSize: String = "1.8 MB",
+        fileUri: String = ""
+    ) {
+        viewModelScope.launch {
+            repository.addRecord(
+                title = title,
+                category = category,
+                fileSize = fileSize,
+                patientId = patientId,
+                appointmentId = appointmentId,
+                fileUri = fileUri
+            )
+            repository.sendMessage(
+                appointmentId = appointmentId,
+                senderId = patientId,
+                senderName = getCurrentUserName().ifBlank { "Patient" },
+                senderRole = UserRole.PATIENT,
+                messageText = "📎 Attached consultation record: $title ($category)"
             )
         }
     }

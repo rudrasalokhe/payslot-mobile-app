@@ -50,6 +50,15 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
     )
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val vitals: StateFlow<List<VitalEntity>> = _currentUserId.flatMapLatest { uid ->
+        if (uid.isBlank()) flowOf(emptyList()) else repository.getVitalsForPatient(uid)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val familyMembers: StateFlow<List<FamilyMemberEntity>> = _currentUserId.flatMapLatest { uid ->
         if (uid.isBlank()) flowOf(emptyList()) else repository.getFamilyMembers(uid)
     }.stateIn(
@@ -171,8 +180,41 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
         repository.cancelAppointment(appointmentId)
     }
 
-    suspend fun addRecord(title: String, category: String, fileSize: String) {
-        repository.addRecord(title, category, fileSize, currentUserId)
+    suspend fun addRecord(
+        title: String,
+        category: String,
+        fileSize: String,
+        appointmentId: String = "",
+        fileUri: String = ""
+    ) {
+        repository.addRecord(title, category, fileSize, currentUserId, appointmentId, fileUri)
+    }
+
+    fun getRecordsForAppointment(appointmentId: String): Flow<List<RecordEntity>> {
+        return repository.getRecordsForAppointment(appointmentId)
+    }
+
+    suspend fun addVital(
+        type: String,
+        valuePrimary: Double,
+        valueSecondary: Double = 0.0,
+        unit: String,
+        notes: String = "",
+        date: String = "Today"
+    ) {
+        repository.addVital(
+            patientId = currentUserId,
+            type = type,
+            valuePrimary = valuePrimary,
+            valueSecondary = valueSecondary,
+            unit = unit,
+            notes = notes,
+            date = date
+        )
+    }
+
+    suspend fun deleteVital(vitalId: String) {
+        repository.deleteVital(vitalId)
     }
 
     suspend fun updateRecordSharing(recordId: String, isShared: Boolean) {

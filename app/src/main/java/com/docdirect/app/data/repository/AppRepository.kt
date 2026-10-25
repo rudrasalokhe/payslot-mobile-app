@@ -33,6 +33,7 @@ class AppRepository private constructor(context: Context) {
     private val invoiceDao = db.invoiceDao()
     private val notificationDao = db.notificationDao()
     private val reviewDao = db.reviewDao()
+    private val vitalDao = db.vitalDao()
     private val sessionManager = SessionManager.getInstance(context)
 
     private val _currentRole = MutableStateFlow(sessionManager.getUserRole())
@@ -769,11 +770,43 @@ class AppRepository private constructor(context: Context) {
             notificationDao.insertNotification(NotificationEntity("notif_2", patientId, "Blood-test-report.pdf shared", "Access granted to Dr Mira Shah until 27 Sep 2026", "Yesterday, 4:30 PM", true, "aven_records"))
             notificationDao.insertNotification(NotificationEntity("notif_3", patientId, "Booking confirmed", "Receipt AV-INV-0925-1042 generated for ₹1,249", "24 Sep, 10:15 AM", true, "aven_profile"))
         }
+
+        if (vitalDao.getVitalCount() == 0) {
+            val patientId = getCurrentUserId() ?: "user_aarav_mehta"
+            val now = System.currentTimeMillis()
+            val dayMillis = 24 * 60 * 60 * 1000L
+            vitalDao.insertVital(VitalEntity("vital_bp_1", patientId, "Blood Pressure", 124.0, 82.0, "mmHg", "Morning reading, after rest", "21 Sep 2026", now - 4 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_bp_2", patientId, "Blood Pressure", 122.0, 80.0, "mmHg", "Normal baseline", "22 Sep 2026", now - 3 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_bp_3", patientId, "Blood Pressure", 128.0, 84.0, "mmHg", "Post-work stress", "23 Sep 2026", now - 2 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_bp_4", patientId, "Blood Pressure", 120.0, 78.0, "mmHg", "Optimal post morning walk", "24 Sep 2026", now - 1 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_bp_5", patientId, "Blood Pressure", 118.0, 76.0, "mmHg", "Resting reading", "Today", now))
+
+            vitalDao.insertVital(VitalEntity("vital_bs_1", patientId, "Blood Sugar", 98.0, 0.0, "mg/dL", "Fasting (8 hrs)", "21 Sep 2026", now - 4 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_bs_2", patientId, "Blood Sugar", 102.0, 0.0, "mg/dL", "Fasting", "22 Sep 2026", now - 3 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_bs_3", patientId, "Blood Sugar", 115.0, 0.0, "mg/dL", "Post-prandial (2 hrs post lunch)", "23 Sep 2026", now - 2 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_bs_4", patientId, "Blood Sugar", 95.0, 0.0, "mg/dL", "Fasting baseline", "24 Sep 2026", now - 1 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_bs_5", patientId, "Blood Sugar", 92.0, 0.0, "mg/dL", "Fasting morning", "Today", now))
+
+            vitalDao.insertVital(VitalEntity("vital_wt_1", patientId, "Weight", 71.8, 0.0, "kg", "Morning weigh-in", "21 Sep 2026", now - 4 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_wt_2", patientId, "Weight", 71.5, 0.0, "kg", "Pre-breakfast", "22 Sep 2026", now - 3 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_wt_3", patientId, "Weight", 71.3, 0.0, "kg", "Consistent hydration", "23 Sep 2026", now - 2 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_wt_4", patientId, "Weight", 71.0, 0.0, "kg", "Post workout", "24 Sep 2026", now - 1 * dayMillis))
+            vitalDao.insertVital(VitalEntity("vital_wt_5", patientId, "Weight", 70.8, 0.0, "kg", "Weekly target reached", "Today", now))
+        }
     }
 
     // Records Flow
     fun getRecordsForPatient(patientId: String): Flow<List<RecordEntity>> = recordDao.getRecordsForPatient(patientId)
-    suspend fun addRecord(title: String, category: String, fileSize: String, patientId: String) {
+    fun getRecordsForAppointment(appointmentId: String): Flow<List<RecordEntity>> = recordDao.getRecordsForAppointment(appointmentId)
+
+    suspend fun addRecord(
+        title: String,
+        category: String,
+        fileSize: String,
+        patientId: String,
+        appointmentId: String = "",
+        fileUri: String = ""
+    ) {
         val record = RecordEntity(
             id = "rec_${System.currentTimeMillis()}",
             patientId = patientId,
@@ -781,12 +814,41 @@ class AppRepository private constructor(context: Context) {
             category = category,
             fileSize = fileSize,
             date = "Today",
-            isSharedWithDoctor = true
+            isSharedWithDoctor = true,
+            appointmentId = appointmentId,
+            fileUri = fileUri
         )
         recordDao.insertRecord(record)
     }
     suspend fun updateRecordSharing(recordId: String, isShared: Boolean) = recordDao.updateSharingStatus(recordId, isShared)
     suspend fun deleteRecord(recordId: String) = recordDao.deleteRecord(recordId)
+
+    // Vitals Flow
+    fun getVitalsForPatient(patientId: String): Flow<List<VitalEntity>> = vitalDao.getVitalsForPatient(patientId)
+    fun getAllVitals(): Flow<List<VitalEntity>> = vitalDao.getAllVitals()
+    suspend fun addVital(
+        patientId: String,
+        type: String,
+        valuePrimary: Double,
+        valueSecondary: Double = 0.0,
+        unit: String,
+        notes: String = "",
+        date: String = "Today"
+    ) {
+        val vital = VitalEntity(
+            id = "vital_${System.currentTimeMillis()}",
+            patientId = patientId,
+            type = type,
+            valuePrimary = valuePrimary,
+            valueSecondary = valueSecondary,
+            unit = unit,
+            notes = notes,
+            date = date,
+            timestamp = System.currentTimeMillis()
+        )
+        vitalDao.insertVital(vital)
+    }
+    suspend fun deleteVital(vitalId: String) = vitalDao.deleteVital(vitalId)
 
     // Family Members Flow
     fun getFamilyMembers(patientId: String): Flow<List<FamilyMemberEntity>> = familyDao.getFamilyMembers(patientId)

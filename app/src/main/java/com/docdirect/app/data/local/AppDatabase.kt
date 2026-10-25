@@ -18,7 +18,8 @@ import com.docdirect.app.data.local.entity.*
         FamilyMemberEntity::class,
         InvoiceEntity::class,
         NotificationEntity::class,
-        ReviewEntity::class
+        ReviewEntity::class,
+        VitalEntity::class
     ],
     version = 3,
     exportSchema = false
@@ -34,6 +35,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun invoiceDao(): InvoiceDao
     abstract fun notificationDao(): NotificationDao
     abstract fun reviewDao(): ReviewDao
+    abstract fun vitalDao(): VitalDao
 
     companion object {
         @Volatile

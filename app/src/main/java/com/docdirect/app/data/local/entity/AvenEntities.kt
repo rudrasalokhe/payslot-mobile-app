@@ -14,6 +14,8 @@ data class RecordEntity(
     val isSharedWithDoctor: Boolean = true,
     val sharedWithDoctorName: String = "Dr Mira Shah",
     val sharingExpiresAt: String = "27 Sep 2026",
+    val appointmentId: String = "",
+    val fileUri: String = "",
     val createdAt: Long = System.currentTimeMillis()
 )
 

@@ -12,6 +12,9 @@ interface RecordDao {
     @Query("SELECT * FROM health_records WHERE patientId = :patientId ORDER BY createdAt DESC")
     fun getRecordsForPatient(patientId: String): Flow<List<RecordEntity>>
 
+    @Query("SELECT * FROM health_records WHERE appointmentId = :appointmentId ORDER BY createdAt DESC")
+    fun getRecordsForAppointment(appointmentId: String): Flow<List<RecordEntity>>
+
     @Query("SELECT * FROM health_records ORDER BY createdAt DESC")
     fun getAllRecords(): Flow<List<RecordEntity>>
 

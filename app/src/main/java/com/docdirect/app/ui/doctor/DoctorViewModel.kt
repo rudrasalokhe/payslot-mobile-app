@@ -3,6 +3,7 @@ package com.docdirect.app.ui.doctor
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.docdirect.app.data.local.entity.RecordEntity
 import com.docdirect.app.data.model.*
 import com.docdirect.app.data.repository.AppRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -154,5 +155,9 @@ class DoctorViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             repository.addPrescription(appointmentId, prescriptionText)
         }
+    }
+
+    fun getRecordsForAppointment(appointmentId: String): Flow<List<RecordEntity>> {
+        return repository.getRecordsForAppointment(appointmentId)
     }
 }
