@@ -64,7 +64,21 @@ fun DocDirectApp() {
                     onCreateAccount = { navController.navigate("aven_signup") },
                     onLogin = { navController.navigate("aven_login") },
                     onExploreFirst = { navController.navigate("aven_explore") },
-                    onClinicianEnter = { navController.navigate("aven_clinician") },
+                    onClinicianEnter = {
+                        authViewModel.quickLoginAsDoctor {
+                            navController.navigate("aven_clinician") {
+                                popUpTo(0)
+                            }
+                        }
+                    },
+                    onPatientEnter = {
+                        authViewModel.quickLoginAsPatient {
+                            patientViewModel.refreshUserSession()
+                            navController.navigate("aven_home") {
+                                popUpTo(0)
+                            }
+                        }
+                    },
                     onOperationsEnter = { navController.navigate("aven_operations") }
                 )
             }
@@ -335,6 +349,12 @@ fun DocDirectApp() {
                 AvenClinicianWorkspaceScreen(
                     doctorViewModel = doctorViewModel,
                     onNavigateBack = { navController.popBackStack() },
+                    onSignOut = {
+                        authViewModel.logout()
+                        navController.navigate("aven_welcome") {
+                            popUpTo(0)
+                        }
+                    },
                     onStartVideoCall = { aptId, patientName ->
                         val encodedName = URLEncoder.encode(patientName, "UTF-8")
                         navController.navigate("video_call/$aptId/$encodedName?isDoctor=true")

@@ -249,7 +249,56 @@ fun AvenLoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Two-Phone Quick Test Login Pills
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = AvenSoft,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("QUICK TEST LOGIN (TWO PHONES)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AvenMuted, letterSpacing = 0.5.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            onClick = {
+                                email = "patient@docdirect.app"
+                                password = "password123"
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = AvenWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("👤 Patient", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenInk)
+                                Text("patient@docdirect.app", fontSize = 10.sp, color = AvenMuted)
+                            }
+                        }
+                        Surface(
+                            onClick = {
+                                email = "doctor@docdirect.app"
+                                password = "password123"
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = AvenMint,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.3f)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🩺 Doctor", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                                Text("doctor@docdirect.app", fontSize = 10.sp, color = AvenTeal)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             // Log in button
             Button(

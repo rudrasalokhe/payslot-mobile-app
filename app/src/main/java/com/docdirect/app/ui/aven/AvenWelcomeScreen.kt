@@ -28,6 +28,7 @@ fun AvenWelcomeScreen(
     onLogin: () -> Unit,
     onExploreFirst: () -> Unit,
     onClinicianEnter: () -> Unit = {},
+    onPatientEnter: () -> Unit = {},
     onOperationsEnter: () -> Unit = {}
 ) {
     Scaffold(
@@ -253,6 +254,49 @@ fun AvenWelcomeScreen(
                         fontWeight = FontWeight.Bold,
                         color = AvenInk
                     )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Two-Phone Testing Card
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = AvenMint,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.25f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.MedicalServices, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("TWO-PHONE TEST MODE", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = AvenTeal, letterSpacing = 0.5.sp)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = onPatientEnter,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = AvenWhite),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                                modifier = Modifier.weight(1f).height(44.dp),
+                                contentPadding = PaddingValues(horizontal = 6.dp)
+                            ) {
+                                Text("📱 Phone 1 · Patient", color = AvenInk, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Button(
+                                onClick = onClinicianEnter,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                                modifier = Modifier.weight(1f).height(44.dp),
+                                contentPadding = PaddingValues(horizontal = 6.dp)
+                            ) {
+                                Text("🩺 Phone 2 · Doctor", color = AvenWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(18.dp))

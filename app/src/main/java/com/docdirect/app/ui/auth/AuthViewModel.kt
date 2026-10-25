@@ -154,6 +154,20 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun saveUserDetails(phone: String, dob: String, preferredName: String) = repository.saveUserDetails(phone, dob, preferredName)
     fun logout() = repository.logout()
 
+    fun quickLoginAsDoctor(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            repository.switchToDoctorSession("doc_mira_shah")
+            onComplete()
+        }
+    }
+
+    fun quickLoginAsPatient(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            repository.switchToPatientSession("user_aarav_mehta")
+            onComplete()
+        }
+    }
+
     // ===== Password Reset Flow =====
     private val _passwordResetSent = MutableStateFlow(false)
     val passwordResetSent: StateFlow<Boolean> = _passwordResetSent.asStateFlow()

@@ -144,6 +144,24 @@ class AppRepository private constructor(context: Context) {
         sessionManager.logout()
     }
 
+    fun switchToDoctorSession(doctorId: String = "doc_mira_shah") {
+        sessionManager.saveUserSession(
+            userId = doctorId,
+            name = "Dr Mira Shah",
+            email = "doctor@docdirect.app",
+            role = UserRole.DOCTOR
+        )
+    }
+
+    fun switchToPatientSession(patientId: String = "user_aarav_mehta") {
+        sessionManager.saveUserSession(
+            userId = patientId,
+            name = "Aarav Mehta",
+            email = "patient@docdirect.app",
+            role = UserRole.PATIENT
+        )
+    }
+
     // Doctor details & slots
     fun getCurrentDoctorProfile(userId: String): Flow<DoctorProfile?> {
         return doctorDao.getDoctorByUserIdFlow(userId).map { entity ->
@@ -459,6 +477,56 @@ class AppRepository private constructor(context: Context) {
     }
 
     private suspend fun seedAvenSampleData() {
+        val defaultPwd = hashPassword("password123")
+
+        // Pre-registered Doctor account
+        if (userDao.getUserByEmail("doctor@docdirect.app") == null) {
+            userDao.insertUser(
+                UserEntity(
+                    id = "doc_mira_shah",
+                    name = "Dr Mira Shah",
+                    email = "doctor@docdirect.app",
+                    passwordHash = defaultPwd,
+                    role = UserRole.DOCTOR
+                )
+            )
+        }
+        if (userDao.getUserByEmail("mira.shah@docdirect.app") == null) {
+            userDao.insertUser(
+                UserEntity(
+                    id = "doc_mira_shah",
+                    name = "Dr Mira Shah",
+                    email = "mira.shah@docdirect.app",
+                    passwordHash = defaultPwd,
+                    role = UserRole.DOCTOR
+                )
+            )
+        }
+
+        // Pre-registered Patient account
+        if (userDao.getUserByEmail("patient@docdirect.app") == null) {
+            userDao.insertUser(
+                UserEntity(
+                    id = "user_aarav_mehta",
+                    name = "Aarav Mehta",
+                    email = "patient@docdirect.app",
+                    passwordHash = defaultPwd,
+                    role = UserRole.PATIENT
+                )
+            )
+        }
+        if (userDao.getUserByEmail("aarav.mehta@docdirect.app") == null) {
+            userDao.insertUser(
+                UserEntity(
+                    id = "user_aarav_mehta",
+                    name = "Aarav Mehta",
+                    email = "aarav.mehta@docdirect.app",
+                    passwordHash = defaultPwd,
+                    role = UserRole.PATIENT
+                )
+            )
+        }
+
         if (doctorDao.getDoctorCount() == 0) {
             val miraShah = DoctorEntity(
                 id = "doc_mira_shah",

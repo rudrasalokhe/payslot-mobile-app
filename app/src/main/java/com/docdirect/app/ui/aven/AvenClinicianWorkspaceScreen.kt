@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 fun AvenClinicianWorkspaceScreen(
     doctorViewModel: DoctorViewModel,
     onNavigateBack: () -> Unit,
+    onSignOut: () -> Unit = {},
     onStartVideoCall: (appointmentId: String, patientName: String) -> Unit,
     onOpenChat: (appointmentId: String) -> Unit
 ) {
@@ -89,23 +90,39 @@ fun AvenClinicianWorkspaceScreen(
                         color = AvenInk
                     )
 
-                    Surface(
-                        color = if (isAvailable) AvenMint else AvenRose,
-                        shape = RoundedCornerShape(100.dp),
-                        modifier = Modifier.clickable { isAvailable = !isAvailable }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            color = if (isAvailable) AvenMint else AvenRose,
+                            shape = RoundedCornerShape(100.dp),
+                            modifier = Modifier.clickable { isAvailable = !isAvailable }
                         ) {
-                            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(if (isAvailable) AvenTeal else AvenRed))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (isAvailable) "ONLINE" else "BUSY",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isAvailable) AvenTeal else AvenRed
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(if (isAvailable) AvenTeal else AvenRed))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (isAvailable) "ONLINE" else "BUSY",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isAvailable) AvenTeal else AvenRed
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = onSignOut,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(AvenWhite)
+                                .border(1.dp, AvenLine, CircleShape)
+                        ) {
+                            Icon(Icons.Default.ExitToApp, contentDescription = "Sign out", tint = AvenInk, modifier = Modifier.size(16.dp))
                         }
                     }
                 }
