@@ -167,6 +167,14 @@ fun AgoraVideoCallScreen(
                     }
                 }
             }
+
+            override fun onTokenPrivilegeWillExpire(token: String?) {
+                Log.w(TAG, "Agora token will expire, renewing dynamic token...")
+                val freshToken = AgoraConfig.generateRtcToken(channelName, localUid)
+                if (freshToken.isNotBlank()) {
+                    rtcEngine?.renewToken(freshToken)
+                }
+            }
         }
 
         var rtcEngine: RtcEngine? = null
@@ -207,7 +215,8 @@ fun AgoraVideoCallScreen(
                 publishMicrophoneTrack = true
             }
 
-            val joinResult = rtcEngine.joinChannel(AgoraConfig.TOKEN, channelName, localUid, options)
+            val rtcToken = AgoraConfig.generateRtcToken(channelName, localUid)
+            val joinResult = rtcEngine.joinChannel(rtcToken.ifBlank { null }, channelName, localUid, options)
             Log.i(TAG, "rtcEngine.joinChannel returned code $joinResult for channel $channelName with uid $localUid")
 
             engine = rtcEngine
