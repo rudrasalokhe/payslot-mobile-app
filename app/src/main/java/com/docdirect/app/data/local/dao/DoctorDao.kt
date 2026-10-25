@@ -25,6 +25,12 @@ interface DoctorDao {
     @Query("SELECT * FROM doctors WHERE userId = :userId LIMIT 1")
     suspend fun getDoctorByUserId(userId: String): DoctorEntity?
 
+    @Query("SELECT * FROM doctors WHERE id = :idOrUserId OR userId = :idOrUserId LIMIT 1")
+    fun getDoctorByIdOrUserIdFlow(idOrUserId: String): Flow<DoctorEntity?>
+
+    @Query("SELECT * FROM doctors WHERE id = :idOrUserId OR userId = :idOrUserId LIMIT 1")
+    suspend fun getDoctorByIdOrUserId(idOrUserId: String): DoctorEntity?
+
     // Slot Queries
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSlot(slot: SlotEntity)

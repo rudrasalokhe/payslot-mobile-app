@@ -66,6 +66,7 @@ fun DocDirectApp() {
                     onExploreFirst = { navController.navigate("aven_explore") },
                     onClinicianEnter = {
                         authViewModel.quickLoginAsDoctor {
+                            doctorViewModel.refreshDoctorSession()
                             navController.navigate("aven_clinician") {
                                 popUpTo(0)
                             }
@@ -79,7 +80,8 @@ fun DocDirectApp() {
                             }
                         }
                     },
-                    onOperationsEnter = { navController.navigate("aven_operations") }
+                    onOperationsEnter = { navController.navigate("aven_operations") },
+                    onDoctorSignup = { navController.navigate("aven_doctor_signup") }
                 )
             }
 
@@ -88,6 +90,7 @@ fun DocDirectApp() {
                 AvenSignUpScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToLogin = { navController.navigate("aven_login") },
+                    onDoctorSignup = { navController.navigate("aven_doctor_signup") },
                     onProceedToVerify = { name, email, password ->
                         regName = name
                         regEmail = email
@@ -156,8 +159,10 @@ fun DocDirectApp() {
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToSignUp = { navController.navigate("aven_signup") },
                     onForgotPassword = { navController.navigate("aven_forgot_password") },
+                    onDoctorSignup = { navController.navigate("aven_doctor_signup") },
                     onLoginSuccess = {
                         patientViewModel.refreshUserSession()
+                        doctorViewModel.refreshDoctorSession()
                         if (authViewModel.getCurrentUserRole() == UserRole.DOCTOR) {
                             navController.navigate("aven_clinician") {
                                 popUpTo(0)
@@ -166,6 +171,20 @@ fun DocDirectApp() {
                             navController.navigate("aven_home") {
                                 popUpTo(0)
                             }
+                        }
+                    }
+                )
+            }
+
+            // Screen 0.55: Clinician Registration & Profile Setup
+            composable("aven_doctor_signup") {
+                AvenDoctorProfileSetupScreen(
+                    authViewModel = authViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onSignupSuccess = {
+                        doctorViewModel.refreshDoctorSession()
+                        navController.navigate("aven_clinician") {
+                            popUpTo(0)
                         }
                     }
                 )

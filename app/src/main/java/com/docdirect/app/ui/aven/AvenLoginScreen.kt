@@ -34,6 +34,7 @@ fun AvenLoginScreen(
     onNavigateBack: () -> Unit,
     onNavigateToSignUp: () -> Unit,
     onForgotPassword: () -> Unit = {},
+    onDoctorSignup: () -> Unit = {},
     onLoginSuccess: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -294,6 +295,21 @@ fun AvenLoginScreen(
                                 Text("doctor@docdirect.app", fontSize = 10.sp, color = AvenTeal)
                             }
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onDoctorSignup() }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.AddCircleOutline, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Are you a doctor? Set up clinician profile", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
                     }
                 }
             }

@@ -29,7 +29,8 @@ fun AvenWelcomeScreen(
     onExploreFirst: () -> Unit,
     onClinicianEnter: () -> Unit = {},
     onPatientEnter: () -> Unit = {},
-    onOperationsEnter: () -> Unit = {}
+    onOperationsEnter: () -> Unit = {},
+    onDoctorSignup: () -> Unit = {}
 ) {
     Scaffold(
         containerColor = AvenBg
@@ -296,6 +297,20 @@ fun AvenWelcomeScreen(
                                 Text("🩺 Phone 2 · Doctor", color = AvenWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onDoctorSignup() }
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.AddCircleOutline, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Register & Set Up New Doctor Profile", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                        }
                     }
                 }
 
@@ -330,6 +345,13 @@ fun AvenWelcomeScreen(
                         fontSize = 11.sp,
                         color = AvenMuted,
                         modifier = Modifier.clickable { onClinicianEnter() }
+                    )
+                    Text("  •  ", fontSize = 11.sp, color = AvenLine)
+                    Text(
+                        text = "Set up doctor profile",
+                        fontSize = 11.sp,
+                        color = AvenMuted,
+                        modifier = Modifier.clickable { onDoctorSignup() }
                     )
                     Text("  •  ", fontSize = 11.sp, color = AvenLine)
                     Text(

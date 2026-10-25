@@ -29,6 +29,7 @@ import com.docdirect.app.ui.theme.*
 fun AvenSignUpScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLogin: () -> Unit,
+    onDoctorSignup: () -> Unit = {},
     onProceedToVerify: (name: String, email: String, password: String) -> Unit
 ) {
     var fullName by remember { mutableStateOf("") }
@@ -159,7 +160,33 @@ fun AvenSignUpScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Clinician Onboarding Link
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = AvenMint,
+                border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.25f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onDoctorSignup() }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.MedicalServices, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Are you a doctor?", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                    }
+                    Text("Register as Clinician →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             // Full name
             Text("Full name", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)

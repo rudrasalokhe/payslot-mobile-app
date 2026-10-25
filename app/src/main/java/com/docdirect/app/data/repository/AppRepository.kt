@@ -164,7 +164,7 @@ class AppRepository private constructor(context: Context) {
 
     // Doctor details & slots
     fun getCurrentDoctorProfile(userId: String): Flow<DoctorProfile?> {
-        return doctorDao.getDoctorByUserIdFlow(userId).map { entity ->
+        return doctorDao.getDoctorByIdOrUserIdFlow(userId).map { entity ->
             entity?.let {
                 DoctorProfile(
                     id = it.id,
@@ -200,14 +200,14 @@ class AppRepository private constructor(context: Context) {
     }
 
     suspend fun toggleDoctorAvailability(doctorId: String, isAvailable: Boolean) {
-        val doctor = doctorDao.getDoctorByUserId(doctorId)
+        val doctor = doctorDao.getDoctorByIdOrUserId(doctorId)
         doctor?.let {
             doctorDao.updateDoctor(it.copy(isAvailable = isAvailable))
         }
     }
 
     suspend fun updateDoctorFee(doctorId: String, newFee: Double) {
-        val doctor = doctorDao.getDoctorByUserId(doctorId)
+        val doctor = doctorDao.getDoctorByIdOrUserId(doctorId)
         doctor?.let {
             doctorDao.updateDoctor(it.copy(consultationFee = newFee))
         }
@@ -220,7 +220,7 @@ class AppRepository private constructor(context: Context) {
         bio: String,
         hospital: String
     ) {
-        val doctor = doctorDao.getDoctorByUserId(doctorId)
+        val doctor = doctorDao.getDoctorByIdOrUserId(doctorId)
         doctor?.let {
             doctorDao.updateDoctor(
                 it.copy(
@@ -230,6 +230,56 @@ class AppRepository private constructor(context: Context) {
                     hospitalAffiliation = hospital
                 )
             )
+        }
+    }
+
+    suspend fun updateDoctorFullProfile(
+        doctorId: String,
+        name: String,
+        medicalLicense: String,
+        specialty: String,
+        qualification: String,
+        experienceYears: Int,
+        fee: Double,
+        hospital: String,
+        bio: String
+    ) {
+        val existing = doctorDao.getDoctorByIdOrUserId(doctorId)
+        if (existing != null) {
+            val updated = existing.copy(
+                name = name.trim(),
+                medicalLicense = medicalLicense.trim(),
+                specialty = specialty.trim(),
+                qualification = qualification.trim(),
+                experienceYears = experienceYears,
+                consultationFee = fee,
+                hospitalAffiliation = hospital.trim(),
+                bio = bio.trim()
+            )
+            doctorDao.insertDoctor(updated)
+            if (sessionManager.getUserId() == existing.userId || sessionManager.getUserId() == existing.id) {
+                sessionManager.saveUserSession(
+                    userId = sessionManager.getUserId() ?: existing.id,
+                    name = name.trim(),
+                    email = sessionManager.getUserEmail(),
+                    role = UserRole.DOCTOR
+                )
+            }
+        } else {
+            val newDoctor = DoctorEntity(
+                id = doctorId,
+                userId = doctorId,
+                name = name.trim(),
+                medicalLicense = medicalLicense.trim(),
+                specialty = specialty.trim(),
+                qualification = qualification.trim(),
+                experienceYears = experienceYears,
+                consultationFee = fee,
+                bio = bio.trim(),
+                hospitalAffiliation = hospital.trim(),
+                isAvailable = true
+            )
+            doctorDao.insertDoctor(newDoctor)
         }
     }
 
