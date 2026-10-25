@@ -95,6 +95,8 @@ fun AgoraVideoCallScreen(
     DisposableEffect(permissionsGranted) {
         if (!permissionsGranted) return@DisposableEffect onDispose { }
 
+        var rtcEngine: RtcEngine? = null
+
         val eventHandler = object : IRtcEngineEventHandler() {
             override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
                 Log.i(TAG, "Joined channel $channel with uid $uid in ${elapsed}ms")
@@ -177,7 +179,6 @@ fun AgoraVideoCallScreen(
             }
         }
 
-        var rtcEngine: RtcEngine? = null
         try {
             val config = RtcEngineConfig().apply {
                 mContext = context.applicationContext
