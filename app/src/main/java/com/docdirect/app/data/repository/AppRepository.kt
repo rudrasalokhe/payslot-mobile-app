@@ -35,7 +35,8 @@ class AppRepository private constructor(context: Context) {
     private val reviewDao = db.reviewDao()
     private val sessionManager = SessionManager.getInstance(context)
 
-    val currentRole: StateFlow<UserRole> = MutableStateFlow(sessionManager.getUserRole()).asStateFlow()
+    private val _currentRole = MutableStateFlow(sessionManager.getUserRole())
+    val currentRole: StateFlow<UserRole> = _currentRole.asStateFlow()
 
     init {
         CoroutineScope(Dispatchers.IO).launch {
@@ -99,6 +100,7 @@ class AppRepository private constructor(context: Context) {
         userDao.insertUser(newUser)
         com.docdirect.app.data.firebase.FirebaseSyncManager.syncUserToCloud(newUser)
         sessionManager.saveUserSession(userId, newUser.name, newUser.email, role)
+        _currentRole.value = role
         return Result.success(newUser)
     }
 
@@ -149,6 +151,7 @@ class AppRepository private constructor(context: Context) {
         }
 
         sessionManager.saveUserSession(user.id, user.name, user.email, user.role)
+        _currentRole.value = user.role
 
         // If doctor, verify clinician profile exists in local DB
         if (user.role == UserRole.DOCTOR) {
@@ -176,6 +179,7 @@ class AppRepository private constructor(context: Context) {
 
     fun logout() {
         sessionManager.logout()
+        _currentRole.value = UserRole.PATIENT
     }
 
     fun switchToDoctorSession(doctorId: String = "doc_mira_shah") {
@@ -185,6 +189,7 @@ class AppRepository private constructor(context: Context) {
             email = "doctor@docdirect.app",
             role = UserRole.DOCTOR
         )
+        _currentRole.value = UserRole.DOCTOR
     }
 
     fun switchToPatientSession(patientId: String = "user_aarav_mehta") {
@@ -194,6 +199,7 @@ class AppRepository private constructor(context: Context) {
             email = "patient@docdirect.app",
             role = UserRole.PATIENT
         )
+        _currentRole.value = UserRole.PATIENT
     }
 
     // Doctor details & slots
@@ -902,15 +908,17 @@ class AppRepository private constructor(context: Context) {
         isPrescription: Boolean = false
     ) {
         val msgEntity = ChatMessageEntity(
-            id = "msg_${System.currentTimeMillis()}",
+            id = "msg_${System.currentTimeMillis()}_${(100..999).random()}",
             appointmentId = appointmentId,
             senderId = senderId,
             senderName = senderName,
             senderRole = senderRole,
-            messageText = messageText,
-            isPrescription = isPrescription
+            messageText = messageText.trim(),
+            isPrescription = isPrescription,
+            timestamp = System.currentTimeMillis()
         )
         chatDao.insertMessage(msgEntity)
+        com.docdirect.app.data.firebase.FirebaseSyncManager.syncChatMessageToCloud(msgEntity)
     }
 
     private fun toAppointment(entity: AppointmentEntity): Appointment {

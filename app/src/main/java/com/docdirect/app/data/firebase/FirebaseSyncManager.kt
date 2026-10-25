@@ -3,7 +3,9 @@ package com.docdirect.app.data.firebase
 import android.content.Context
 import android.util.Log
 import com.docdirect.app.data.local.AppDatabase
+import com.docdirect.app.data.local.dao.ChatDao
 import com.docdirect.app.data.local.entity.AppointmentEntity
+import com.docdirect.app.data.local.entity.ChatMessageEntity
 import com.docdirect.app.data.local.entity.DoctorEntity
 import com.docdirect.app.data.local.entity.UserEntity
 import com.docdirect.app.data.model.AppointmentStatus
@@ -34,6 +36,8 @@ object FirebaseSyncManager {
     private val doctorsRef: DatabaseReference by lazy { database.getReference("doctors") }
     private val appointmentsRef: DatabaseReference by lazy { database.getReference("appointments") }
     private val usersRef: DatabaseReference by lazy { database.getReference("users") }
+    private val chatsRef: DatabaseReference by lazy { database.getReference("chats") }
+    private val activeChatListeners = mutableMapOf<String, ChildEventListener>()
 
     fun init(context: Context) {
         if (isInitialized) return
@@ -330,6 +334,89 @@ object FirebaseSyncManager {
                     continuation.resumeWith(Result.success(null))
                 }
             })
+        }
+    }
+
+    fun syncChatMessageToCloud(message: ChatMessageEntity) {
+        scope.launch {
+            try {
+                val data = mapOf(
+                    "id" to message.id,
+                    "appointmentId" to message.appointmentId,
+                    "senderId" to message.senderId,
+                    "senderName" to message.senderName,
+                    "senderRole" to message.senderRole.name,
+                    "messageText" to message.messageText,
+                    "isPrescription" to message.isPrescription,
+                    "timestamp" to message.timestamp
+                )
+                chatsRef.child(message.appointmentId).child("messages").child(message.id).setValue(data)
+                Log.d(TAG, "Chat message synced to cloud: ${message.id} for apt ${message.appointmentId}")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to sync chat message: ${e.message}")
+            }
+        }
+    }
+
+    fun startListeningToChat(appointmentId: String, chatDao: ChatDao) {
+        if (activeChatListeners.containsKey(appointmentId)) return
+        val messagesNode = chatsRef.child(appointmentId).child("messages")
+        val listener = object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                handleChatMessageSnapshot(snapshot, chatDao)
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                handleChatMessageSnapshot(snapshot, chatDao)
+            }
+
+            override fun onChildRemoved(snapshot: DataSnapshot) {}
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onCancelled(error: DatabaseError) {
+                Log.w(TAG, "Chat sync cancelled: ${error.message}")
+            }
+        }
+        activeChatListeners[appointmentId] = listener
+        messagesNode.addChildEventListener(listener)
+        Log.i(TAG, "Started listening for realtime chat in appointment: $appointmentId")
+    }
+
+    fun stopListeningToChat(appointmentId: String) {
+        val listener = activeChatListeners.remove(appointmentId)
+        if (listener != null) {
+            chatsRef.child(appointmentId).child("messages").removeEventListener(listener)
+            Log.i(TAG, "Stopped listening for realtime chat in appointment: $appointmentId")
+        }
+    }
+
+    private fun handleChatMessageSnapshot(snapshot: DataSnapshot, chatDao: ChatDao) {
+        scope.launch {
+            try {
+                val id = snapshot.child("id").getValue(String::class.java) ?: snapshot.key ?: return@launch
+                val appointmentId = snapshot.child("appointmentId").getValue(String::class.java) ?: return@launch
+                val senderId = snapshot.child("senderId").getValue(String::class.java) ?: ""
+                val senderName = snapshot.child("senderName").getValue(String::class.java) ?: "User"
+                val roleStr = snapshot.child("senderRole").getValue(String::class.java) ?: UserRole.PATIENT.name
+                val senderRole = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.PATIENT }
+                val messageText = snapshot.child("messageText").getValue(String::class.java) ?: ""
+                val isPrescription = snapshot.child("isPrescription").getValue(Boolean::class.java) ?: false
+                val timestamp = snapshot.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+
+                val entity = ChatMessageEntity(
+                    id = id,
+                    appointmentId = appointmentId,
+                    senderId = senderId,
+                    senderName = senderName,
+                    senderRole = senderRole,
+                    messageText = messageText,
+                    isPrescription = isPrescription,
+                    timestamp = timestamp
+                )
+                chatDao.insertMessage(entity)
+                Log.d(TAG, "Realtime chat message received from cloud: $messageText from $senderName")
+            } catch (e: Exception) {
+                Log.w(TAG, "Error parsing chat snapshot: ${e.message}")
+            }
         }
     }
 }

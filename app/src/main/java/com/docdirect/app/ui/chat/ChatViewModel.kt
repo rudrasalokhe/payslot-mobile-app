@@ -38,12 +38,22 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun startChatSync(appointmentId: String) {
+        val chatDao = com.docdirect.app.data.local.AppDatabase.getDatabase(getApplication()).chatDao()
+        com.docdirect.app.data.firebase.FirebaseSyncManager.startListeningToChat(appointmentId, chatDao)
+    }
+
+    fun stopChatSync(appointmentId: String) {
+        com.docdirect.app.data.firebase.FirebaseSyncManager.stopListeningToChat(appointmentId)
+    }
+
     fun sendMessage(
         appointmentId: String,
         senderId: String,
         senderName: String,
         role: UserRole,
-        text: String
+        text: String,
+        isPrescription: Boolean = false
     ) {
         if (text.isNotBlank()) {
             viewModelScope.launch {
@@ -52,15 +62,25 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     senderId = senderId,
                     senderName = senderName,
                     senderRole = role,
-                    messageText = text
+                    messageText = text,
+                    isPrescription = isPrescription
                 )
             }
         }
     }
 
     fun issuePrescription(appointmentId: String, prescriptionText: String) {
+        if (prescriptionText.isBlank()) return
         viewModelScope.launch {
             repository.addPrescription(appointmentId, prescriptionText)
+            sendMessage(
+                appointmentId = appointmentId,
+                senderId = getCurrentUserId(),
+                senderName = getCurrentUserName().ifBlank { "Dr Mira Shah" },
+                role = UserRole.DOCTOR,
+                text = prescriptionText,
+                isPrescription = true
+            )
         }
     }
 }
