@@ -307,7 +307,7 @@ fun AvenLoginScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.AddCircleOutline, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.AddCircle, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Are you a doctor? Set up clinician profile", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
                     }
