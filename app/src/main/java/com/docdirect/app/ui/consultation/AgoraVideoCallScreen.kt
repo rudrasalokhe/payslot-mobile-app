@@ -348,10 +348,10 @@ fun AgoraVideoCallScreen(
             .background(Color(0xFF07191B)) // Deep dark teal/slate video backdrop
     ) {
         if (useWebRtcRoom) {
-            // Free WebRTC Room (Jitsi Meet Powered - 100% Free & Zero Tokens Required)
+            // Free WebRTC Room (Jitsi Meet Powered via Open Community Node - 100% Free, Zero Login, Zero Moderator Barrier)
             val webRtcUrl = remember(channelName, localUserName) {
                 val encodedUser = try { URLEncoder.encode(localUserName, "UTF-8") } catch (e: Exception) { localUserName }
-                "https://meet.jit.si/$channelName#userInfo.displayName=\"$encodedUser\"&config.disableDeepLinking=true&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false"
+                "https://meet.ffmuc.net/$channelName#userInfo.displayName=\"$encodedUser\"&config.disableDeepLinking=true&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false"
             }
 
             AndroidView(

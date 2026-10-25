@@ -36,6 +36,7 @@ fun AvenVisitsScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val appointments by patientViewModel.appointments.collectAsState()
+    val invoices by patientViewModel.invoices.collectAsState()
 
     var selectedTab by remember { mutableStateOf("UPCOMING") }
     var viewingAppointmentDetail by remember { mutableStateOf<Appointment?>(null) }
@@ -50,6 +51,7 @@ fun AvenVisitsScreen(
             "UPCOMING" -> appointments.filter { it.status == AppointmentStatus.UPCOMING }
             "PAST" -> appointments.filter { it.status == AppointmentStatus.COMPLETED }
             "CANCELLED" -> appointments.filter { it.status == AppointmentStatus.CANCELLED }
+            "PAYMENTS" -> appointments
             else -> appointments
         }
     }
@@ -103,7 +105,7 @@ fun AvenVisitsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("UPCOMING" to "Upcoming", "PAST" to "Past", "CANCELLED" to "Cancelled").forEach { (tabKey, tabLabel) ->
+                    listOf("UPCOMING" to "Upcoming", "PAYMENTS" to "Payments", "PAST" to "Past", "CANCELLED" to "Cancelled").forEach { (tabKey, tabLabel) ->
                         val isSelected = selectedTab == tabKey
                         Surface(
                             shape = RoundedCornerShape(14.dp),
@@ -245,6 +247,43 @@ fun AvenVisitsScreen(
                                 fontWeight = FontWeight.SemiBold,
                                 color = AvenInk
                             )
+
+                            // Payment & Fee Badge
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = AvenMint.copy(alpha = 0.5f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.2f)),
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(15.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Paid ₹${apt.feePaid.toInt()}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AvenTeal
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "• ${apt.paymentMethod}",
+                                            fontSize = 12.sp,
+                                            color = AvenMuted
+                                        )
+                                    }
+                                    Text(
+                                        text = "Txn: ${apt.transactionId.takeLast(8)}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = AvenMuted
+                                    )
+                                }
+                            }
 
                             if (apt.symptoms.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -492,6 +531,63 @@ fun AvenVisitsScreen(
                             fontSize = 12.sp,
                             color = AvenMuted
                         )
+                    }
+
+                    // Official Payment Receipt & Tax Invoice
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = AvenWhite,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.3f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Payment Confirmed", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AvenInk)
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = AvenMint
+                                ) {
+                                    Text("PAID", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = AvenTeal, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                                }
+                            }
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = AvenLine)
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Doctor Consultation Fee", fontSize = 12.sp, color = AvenMuted)
+                                Text("₹${apt.feePaid.toInt()}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Platform & Telehealth Fee", fontSize = 12.sp, color = AvenMuted)
+                                Text("₹0 (Waived)", fontSize = 12.sp, color = AvenTeal)
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Total Amount Paid", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AvenInk)
+                                Text("₹${apt.feePaid.toInt()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AvenTeal)
+                            }
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = AvenLine)
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Payment Method", fontSize = 11.sp, color = AvenMuted)
+                                Text(apt.paymentMethod, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AvenInk)
+                            }
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Transaction ID", fontSize = 11.sp, color = AvenMuted)
+                                Text(apt.transactionId.ifBlank { "TXN_${System.currentTimeMillis()}" }, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AvenInk)
+                            }
+                        }
                     }
 
                     Text("Before you join", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AvenInk)

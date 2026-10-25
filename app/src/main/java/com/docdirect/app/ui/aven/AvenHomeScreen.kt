@@ -376,6 +376,17 @@ fun AvenHomeScreen(
                                             fontSize = 13.sp,
                                             color = AvenMuted
                                         )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF22C55E), modifier = Modifier.size(12.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = "Paid ₹${nextAppointment.feePaid.toInt()} • Confirmed",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF22C55E)
+                                            )
+                                        }
                                     }
 
                                     Surface(
