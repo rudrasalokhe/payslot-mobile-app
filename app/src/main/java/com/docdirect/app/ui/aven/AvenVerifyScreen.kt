@@ -365,20 +365,31 @@ fun AvenVerifyScreen(
                 }
             }
 
-            // Developer / Demo OTP Hint
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
+            // Developer / Demo OTP 1-Tap Auto-Fill
+            Spacer(modifier = Modifier.height(14.dp))
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = AvenSoft,
+                border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.Center
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        otpValue = currentGeneratedOtp.ifBlank { "428915" }
+                    }
             ) {
-                Text(
-                    text = "Demo code: $currentGeneratedOtp (or 428915)",
-                    fontSize = 11.sp,
-                    color = AvenMuted.copy(alpha = 0.7f),
-                    fontWeight = FontWeight.Medium
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🧪 Test OTP:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenInk)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(currentGeneratedOtp.ifBlank { "428915" }, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                    }
+                    Text("Tap to Auto-fill →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AvenTeal)
+                }
             }
 
             Spacer(modifier = Modifier.height(30.dp))
