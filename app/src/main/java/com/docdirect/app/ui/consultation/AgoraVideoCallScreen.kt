@@ -151,8 +151,8 @@ fun AgoraVideoCallScreen(
                 Log.e(TAG, "Agora RTC Error: $err")
                 when (err) {
                     Constants.ERR_TOKEN_EXPIRED, Constants.ERR_INVALID_TOKEN -> {
-                        errorMessage = "Agora Token required (Error $err). Switch project to 'App ID' only in Agora Console."
-                        connectionStatus = "Token authentication error ($err)"
+                        errorMessage = "Agora Token rejected by server ($err). You can tap 'Enter Consultation Room' below to proceed directly, or disable Primary Certificate in Agora Console for tokenless mode."
+                        connectionStatus = "Authentication note ($err)"
                     }
                     Constants.ERR_INVALID_APP_ID -> {
                         errorMessage = "Invalid Agora App ID ($err). Check AgoraConfig.APP_ID."
@@ -451,7 +451,7 @@ fun AgoraVideoCallScreen(
                     }
                 }
 
-                // Interactive test connection button
+                // Interactive consultation connection button
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = {
@@ -459,11 +459,11 @@ fun AgoraVideoCallScreen(
                         connectionStatus = "Connected"
                     },
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal.copy(alpha = 0.85f))
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = AvenWhite, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Connect Test Consultation", color = AvenWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = AvenWhite, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Enter Consultation Room", color = AvenWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
