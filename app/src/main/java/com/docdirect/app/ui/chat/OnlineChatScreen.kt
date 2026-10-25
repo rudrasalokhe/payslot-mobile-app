@@ -47,45 +47,74 @@ fun OnlineChatScreen(
         }
     }
 
-    val appointment by viewModel.getAppointment(appointmentId).collectAsState()
-    val messages by viewModel.getMessagesForAppointment(appointmentId).collectAsState()
+    val appointmentFlow = remember(appointmentId) { viewModel.getAppointment(appointmentId) }
+    val appointment by appointmentFlow.collectAsState()
+
+    val messagesFlow = remember(appointmentId) { viewModel.getMessagesForAppointment(appointmentId) }
+    val messages by messagesFlow.collectAsState()
+
     val currentRole by viewModel.currentRole.collectAsState()
 
     val currentUserId = remember { viewModel.getCurrentUserId() }
     val currentUserName = remember { viewModel.getCurrentUserName() }
-    val activeRole = remember(currentRole) { viewModel.getCurrentRole() }
+    val activeRole = currentRole
 
     var messageText by remember { mutableStateOf("") }
     var showPrescriptionModal by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
-    // Auto-scroll to newest message
+    var isInitialScrollDone by remember(appointmentId) { mutableStateOf(false) }
+
+    // Auto-scroll to newest message smoothly without initial flickers
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+            val targetIndex = messages.size + 1
+            if (!isInitialScrollDone) {
+                listState.scrollToItem(targetIndex)
+                isInitialScrollDone = true
+            } else {
+                listState.animateScrollToItem(targetIndex)
+            }
         }
     }
 
-    val senderName = currentUserName.ifBlank {
-        if (activeRole == UserRole.DOCTOR) appointment?.doctorName ?: "Dr. Mira Shah"
-        else appointment?.patientName ?: "Patient"
+    val senderName = remember(currentUserName, activeRole, appointment) {
+        currentUserName.ifBlank {
+            if (activeRole == UserRole.DOCTOR) appointment?.doctorName ?: "Dr. Mira Shah"
+            else appointment?.patientName ?: "Patient"
+        }
     }
 
-    val senderId = currentUserId.ifBlank {
-        if (activeRole == UserRole.DOCTOR) appointment?.doctorId ?: "doc_mira_shah"
-        else appointment?.patientId ?: "user_patient"
+    val senderId = remember(currentUserId, activeRole, appointment) {
+        currentUserId.ifBlank {
+            if (activeRole == UserRole.DOCTOR) appointment?.doctorId ?: "doc_mira_shah"
+            else appointment?.patientId ?: "user_patient"
+        }
     }
 
-    val peerDisplayName = if (activeRole == UserRole.DOCTOR) {
-        appointment?.patientName?.ifBlank { "Patient" } ?: "Patient"
-    } else {
-        appointment?.doctorName?.ifBlank { "Dr. Mira Shah" } ?: "Dr. Mira Shah"
+    val peerDisplayName = remember(activeRole, appointment) {
+        if (activeRole == UserRole.DOCTOR) {
+            appointment?.patientName?.ifBlank { "Patient" } ?: "Patient"
+        } else {
+            appointment?.doctorName?.ifBlank { "Dr. Mira Shah" } ?: "Dr. Mira Shah"
+        }
     }
 
-    val peerSubtitle = if (activeRole == UserRole.DOCTOR) {
-        "Patient Consultation · Active"
-    } else {
-        appointment?.doctorSpecialty ?: "Dermatology Specialist"
+    val peerSubtitle = remember(activeRole, appointment) {
+        if (activeRole == UserRole.DOCTOR) {
+            "Patient Consultation · Active"
+        } else {
+            appointment?.doctorSpecialty ?: "Dermatology Specialist"
+        }
+    }
+
+    val peerInitials = remember(peerDisplayName) {
+        peerDisplayName.split(" ")
+            .mapNotNull { it.firstOrNull()?.toString() }
+            .take(2)
+            .joinToString("")
+            .uppercase()
+            .ifBlank { "DR" }
     }
 
     Scaffold(
@@ -133,7 +162,7 @@ fun OnlineChatScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = peerDisplayName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                                text = peerInitials,
                                 color = AvenTeal,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
@@ -243,39 +272,40 @@ fun OnlineChatScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item { Spacer(modifier = Modifier.height(10.dp)) }
+                item(key = "top_spacer") { Spacer(modifier = Modifier.height(6.dp)) }
 
-                if (messages.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 40.dp),
-                            contentAlignment = Alignment.Center
+                item(key = "encryption_banner") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = AvenWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine)
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = AvenWhite,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine)
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(Icons.Default.Lock, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Lock, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "End-to-End Encrypted Consultation",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = AvenInk
                                     )
-                                    Text(
-                                        text = "Messages are synchronized live between doctor and patient.",
-                                        fontSize = 11.sp,
-                                        color = AvenMuted
-                                    )
                                 }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Messages are synchronized live between doctor and patient.",
+                                    fontSize = 11.sp,
+                                    color = AvenMuted
+                                )
                             }
                         }
                     }
@@ -286,7 +316,7 @@ fun OnlineChatScreen(
                     ChatMessageBubble(message = msg, isMe = isMe)
                 }
 
-                item { Spacer(modifier = Modifier.height(10.dp)) }
+                item(key = "bottom_spacer") { Spacer(modifier = Modifier.height(10.dp)) }
             }
 
             // Quick Reply Chips
@@ -401,10 +431,15 @@ fun OnlineChatScreen(
     }
 }
 
+private val chatTimeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+
 @Composable
 fun ChatMessageBubble(message: ChatMessage, isMe: Boolean) {
-    val dateFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
-    val timeString = remember(message.timestamp) { dateFormat.format(Date(message.timestamp)) }
+    val timeString = remember(message.timestamp) {
+        synchronized(chatTimeFormatter) {
+            chatTimeFormatter.format(Date(message.timestamp))
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth(),

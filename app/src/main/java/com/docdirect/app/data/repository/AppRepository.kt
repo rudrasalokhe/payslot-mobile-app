@@ -883,7 +883,9 @@ class AppRepository private constructor(context: Context) {
 
     // Chat Flow
     fun getMessagesForAppointment(appointmentId: String): Flow<List<ChatMessage>> {
-        return chatDao.getMessagesForAppointment(appointmentId).map { entities ->
+        return chatDao.getMessagesForAppointment(appointmentId)
+            .distinctUntilChanged()
+            .map { entities ->
             entities.map {
                 ChatMessage(
                     id = it.id,

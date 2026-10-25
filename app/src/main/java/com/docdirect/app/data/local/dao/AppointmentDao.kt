@@ -38,7 +38,7 @@ interface AppointmentDao {
 
 @Dao
 interface ChatDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMessage(message: ChatMessageEntity)
 
     @Query("SELECT * FROM chat_messages WHERE appointmentId = :appointmentId ORDER BY timestamp ASC")
