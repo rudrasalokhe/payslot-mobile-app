@@ -11,6 +11,8 @@ import com.docdirect.app.data.local.entity.UserEntity
 import com.docdirect.app.data.model.AppointmentStatus
 import com.docdirect.app.data.model.UserRole
 import com.google.firebase.database.*
+import com.docdirect.app.services.DocDirectNotificationHub
+import com.docdirect.app.data.auth.SessionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,6 +25,7 @@ object FirebaseSyncManager {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isInitialized = false
+    private var appContext: Context? = null
 
     private val database: FirebaseDatabase by lazy {
         try {
@@ -40,6 +43,8 @@ object FirebaseSyncManager {
     private val activeChatListeners = mutableMapOf<String, ChildEventListener>()
 
     fun init(context: Context) {
+        appContext = context.applicationContext
+        DocDirectNotificationHub.initializeChannels(context.applicationContext)
         if (isInitialized) return
         isInitialized = true
 
@@ -414,6 +419,30 @@ object FirebaseSyncManager {
                 )
                 chatDao.insertMessage(entity)
                 Log.d(TAG, "Realtime chat message received from cloud: $messageText from $senderName")
+                appContext?.let { ctx ->
+                    val currentUid = SessionManager.getInstance(ctx).getUserId() ?: ""
+                    if (senderId.isNotBlank() && senderId != currentUid) {
+                        DocDirectNotificationHub.postChatMessageNotification(
+                            context = ctx,
+                            appointmentId = appointmentId,
+                            senderName = senderName,
+                            messageText = messageText,
+                            recipientUserId = currentUid
+                        )
+                    }
+                }
+                appContext?.let { ctx ->
+                    val currentUid = SessionManager.getInstance(ctx).getUserId() ?: ""
+                    if (senderId.isNotBlank() && senderId != currentUid) {
+                        DocDirectNotificationHub.postChatMessageNotification(
+                            context = ctx,
+                            appointmentId = appointmentId,
+                            senderName = senderName,
+                            messageText = messageText,
+                            recipientUserId = currentUid
+                        )
+                    }
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "Error parsing chat snapshot: ${e.message}")
             }

@@ -400,6 +400,20 @@ class AppRepository private constructor(context: Context) {
     suspend fun addPrescription(appointmentId: String, prescriptionText: String) {
         appointmentDao.addPrescription(appointmentId, prescriptionText)
         com.docdirect.app.data.firebase.FirebaseSyncManager.syncPrescriptionToCloud(appointmentId, prescriptionText)
+        try {
+            val apt = appointmentDao.getAppointmentById(appointmentId).firstOrNull()
+            val patientId = apt?.patientId ?: getCurrentUserId() ?: "user_aarav_mehta"
+            val doctorName = apt?.doctorName ?: "Dr. Mira Shah"
+            com.docdirect.app.services.DocDirectNotificationHub.postPrescriptionAlert(
+                context = appContext,
+                appointmentId = appointmentId,
+                doctorName = doctorName,
+                prescriptionSummary = prescriptionText,
+                patientUserId = patientId
+            )
+        } catch (e: Exception) {
+            android.util.Log.w("AppRepository", "Error triggering prescription notification: ${e.message}")
+        }
     }
 
     suspend fun rescheduleAppointment(appointmentId: String, newDate: String, newTime: String) {
@@ -407,54 +421,34 @@ class AppRepository private constructor(context: Context) {
     }
 
     /**
-     * Schedules WorkManager local notification reminders for 1 hour and 15 minutes before an appointment.
+     * Schedules WorkManager call reminders 15 minutes and 5 minutes before scheduled visits
+     * with an interactive "Tap to Join" action button for both patients & clinicians.
      */
     fun scheduleAppointmentReminders(
         appointmentId: String,
         doctorName: String,
         date: String,
-        time: String
+        time: String,
+        patientName: String = "Patient"
     ) {
         try {
             val targetEpoch = parseAppointmentEpoch(date, time)
             val now = System.currentTimeMillis()
 
-            // 1-Hour Reminder
-            val delay1HourMs = (targetEpoch - 60 * 60 * 1000L) - now
-            if (delay1HourMs > 0) {
-                val request1Hour = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
-                    .setInitialDelay(delay1HourMs, TimeUnit.MILLISECONDS)
-                    .setInputData(
-                        workDataOf(
-                            AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
-                            AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
-                            AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
-                            AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
-                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 60
-                        )
-                    )
-                    .addTag("reminder_${appointmentId}_60m")
-                    .build()
-
-                WorkManager.getInstance(appContext).enqueueUniqueWork(
-                    "reminder_${appointmentId}_60m",
-                    ExistingWorkPolicy.REPLACE,
-                    request1Hour
-                )
-            }
-
-            // 15-Minute Reminder
+            // 15-Minute Call Reminder (Patient & Doctor)
             val delay15MinMs = (targetEpoch - 15 * 60 * 1000L) - now
             if (delay15MinMs > 0) {
-                val request15Min = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
+                val reqPatient15 = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
                     .setInitialDelay(delay15MinMs, TimeUnit.MILLISECONDS)
                     .setInputData(
                         workDataOf(
                             AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
                             AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
+                            AppointmentReminderWorker.KEY_PATIENT_NAME to patientName,
                             AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
                             AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
-                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 15
+                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 15,
+                            AppointmentReminderWorker.KEY_IS_DOCTOR to false
                         )
                     )
                     .addTag("reminder_${appointmentId}_15m")
@@ -463,20 +457,43 @@ class AppRepository private constructor(context: Context) {
                 WorkManager.getInstance(appContext).enqueueUniqueWork(
                     "reminder_${appointmentId}_15m",
                     ExistingWorkPolicy.REPLACE,
-                    request15Min
+                    reqPatient15
+                )
+
+                val reqDoctor15 = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
+                    .setInitialDelay(delay15MinMs, TimeUnit.MILLISECONDS)
+                    .setInputData(
+                        workDataOf(
+                            AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
+                            AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
+                            AppointmentReminderWorker.KEY_PATIENT_NAME to patientName,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
+                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 15,
+                            AppointmentReminderWorker.KEY_IS_DOCTOR to true
+                        )
+                    )
+                    .addTag("reminder_doc_${appointmentId}_15m")
+                    .build()
+
+                WorkManager.getInstance(appContext).enqueueUniqueWork(
+                    "reminder_doc_${appointmentId}_15m",
+                    ExistingWorkPolicy.REPLACE,
+                    reqDoctor15
                 )
             } else if (targetEpoch > now) {
-                // If booked within the 15-minute window before appointment, schedule immediate reminder
-                val immediateDelay = (targetEpoch - now).coerceAtLeast(3000L)
-                val requestImmediate = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
+                val immediateDelay = (targetEpoch - now).coerceAtLeast(2000L)
+                val reqImmediate = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
                     .setInitialDelay(immediateDelay, TimeUnit.MILLISECONDS)
                     .setInputData(
                         workDataOf(
                             AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
                             AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
+                            AppointmentReminderWorker.KEY_PATIENT_NAME to patientName,
                             AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
                             AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
-                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 15
+                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 15,
+                            AppointmentReminderWorker.KEY_IS_DOCTOR to false
                         )
                     )
                     .addTag("reminder_${appointmentId}_15m")
@@ -485,7 +502,55 @@ class AppRepository private constructor(context: Context) {
                 WorkManager.getInstance(appContext).enqueueUniqueWork(
                     "reminder_${appointmentId}_15m",
                     ExistingWorkPolicy.REPLACE,
-                    requestImmediate
+                    reqImmediate
+                )
+            }
+
+            // 5-Minute Call Reminder (Patient & Doctor with immediate "Tap to Join")
+            val delay5MinMs = (targetEpoch - 5 * 60 * 1000L) - now
+            if (delay5MinMs > 0) {
+                val reqPatient5 = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
+                    .setInitialDelay(delay5MinMs, TimeUnit.MILLISECONDS)
+                    .setInputData(
+                        workDataOf(
+                            AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
+                            AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
+                            AppointmentReminderWorker.KEY_PATIENT_NAME to patientName,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
+                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 5,
+                            AppointmentReminderWorker.KEY_IS_DOCTOR to false
+                        )
+                    )
+                    .addTag("reminder_${appointmentId}_5m")
+                    .build()
+
+                WorkManager.getInstance(appContext).enqueueUniqueWork(
+                    "reminder_${appointmentId}_5m",
+                    ExistingWorkPolicy.REPLACE,
+                    reqPatient5
+                )
+
+                val reqDoctor5 = OneTimeWorkRequestBuilder<AppointmentReminderWorker>()
+                    .setInitialDelay(delay5MinMs, TimeUnit.MILLISECONDS)
+                    .setInputData(
+                        workDataOf(
+                            AppointmentReminderWorker.KEY_APPOINTMENT_ID to appointmentId,
+                            AppointmentReminderWorker.KEY_DOCTOR_NAME to doctorName,
+                            AppointmentReminderWorker.KEY_PATIENT_NAME to patientName,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_DATE to date,
+                            AppointmentReminderWorker.KEY_APPOINTMENT_TIME to time,
+                            AppointmentReminderWorker.KEY_REMINDER_MINUTES to 5,
+                            AppointmentReminderWorker.KEY_IS_DOCTOR to true
+                        )
+                    )
+                    .addTag("reminder_doc_${appointmentId}_5m")
+                    .build()
+
+                WorkManager.getInstance(appContext).enqueueUniqueWork(
+                    "reminder_doc_${appointmentId}_5m",
+                    ExistingWorkPolicy.REPLACE,
+                    reqDoctor5
                 )
             }
         } catch (e: Exception) {
@@ -498,8 +563,10 @@ class AppRepository private constructor(context: Context) {
      */
     fun cancelAppointmentReminders(appointmentId: String) {
         try {
-            WorkManager.getInstance(appContext).cancelUniqueWork("reminder_${appointmentId}_60m")
             WorkManager.getInstance(appContext).cancelUniqueWork("reminder_${appointmentId}_15m")
+            WorkManager.getInstance(appContext).cancelUniqueWork("reminder_${appointmentId}_5m")
+            WorkManager.getInstance(appContext).cancelUniqueWork("reminder_doc_${appointmentId}_15m")
+            WorkManager.getInstance(appContext).cancelUniqueWork("reminder_doc_${appointmentId}_5m")
         } catch (e: Exception) {
             android.util.Log.e("AppRepository", "Error cancelling appointment reminders", e)
         }
