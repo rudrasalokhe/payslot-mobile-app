@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.docdirect.app.data.local.entity.RecordEntity
 import com.docdirect.app.data.local.entity.VitalEntity
+import com.docdirect.app.data.storage.FileStorageHelper
 import com.docdirect.app.ui.patient.PatientViewModel
 import com.docdirect.app.ui.theme.*
 import com.docdirect.app.utils.PrescriptionPdfGenerator
@@ -660,20 +661,24 @@ fun AvenRecordsScreen(
         var uploadTitle by remember { mutableStateOf("") }
         var uploadCategory by remember { mutableStateOf("Lab report") }
         var selectedAppointmentId by remember { mutableStateOf("") }
-        var selectedFileUri by remember { mutableStateOf("") }
-        var detectedFileSize by remember { mutableStateOf("2.1 MB") }
+        var pickedFile by remember { mutableStateOf<FileStorageHelper.PickedFile?>(null) }
+        var isSaving by remember { mutableStateOf(false) }
 
+        // Storage Access Framework picker: the system document UI returns a read-only content Uri
         val filePickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
         ) { uri: Uri? ->
             uri?.let {
-                selectedFileUri = it.toString()
-                val pathSegment = it.lastPathSegment ?: "Document"
-                if (uploadTitle.isBlank()) {
-                    uploadTitle = pathSegment.substringAfterLast("/").substringAfterLast(":")
+                val file = FileStorageHelper.describe(context, it)
+                val error = FileStorageHelper.validate(file)
+                if (error != null) {
+                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                } else {
+                    pickedFile = file
+                    if (uploadTitle.isBlank()) {
+                        uploadTitle = FileStorageHelper.baseName(file.displayName)
+                    }
                 }
-                detectedFileSize = "1.9 MB"
-                Toast.makeText(context, "File attached: $uploadTitle", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -690,31 +695,62 @@ fun AvenRecordsScreen(
                         color = AvenMuted
                     )
 
-                    // File picker button
-                    Surface(
-                        onClick = { filePickerLauncher.launch("*/*") },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (selectedFileUri.isNotBlank()) AvenMint else AvenSoft,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedFileUri.isNotBlank()) AvenTeal else AvenLine),
-                        modifier = Modifier.fillMaxWidth()
+                    // File picker buttons (PDF or photo from device storage)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                        OutlinedButton(
+                            onClick = { filePickerLauncher.launch(FileStorageHelper.MIME_PDF) },
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Icon(
-                                if (selectedFileUri.isNotBlank()) Icons.Default.CheckCircle else Icons.Default.AttachFile,
-                                contentDescription = null,
-                                tint = if (selectedFileUri.isNotBlank()) AvenTeal else AvenMuted
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (selectedFileUri.isNotBlank()) "File Selected from Device" else "Browse PDF / Image from Device",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (selectedFileUri.isNotBlank()) AvenTeal else AvenInk
-                            )
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Choose PDF", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                        }
+                        OutlinedButton(
+                            onClick = { filePickerLauncher.launch("image/*") },
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Image, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Choose Photo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                        }
+                    }
+
+                    pickedFile?.let { file ->
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = AvenMint,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AvenTeal)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = file.displayName,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = AvenTeal,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "${file.typeLabel} · ${file.sizeLabel}",
+                                        fontSize = 11.sp,
+                                        color = AvenMuted
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -777,25 +813,33 @@ fun AvenRecordsScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (uploadTitle.isNotBlank()) {
+                        val file = pickedFile
+                        if (file != null && uploadTitle.isNotBlank() && !isSaving) {
+                            isSaving = true
                             coroutineScope.launch {
-                                val filename = if (uploadTitle.contains(".")) uploadTitle else "$uploadTitle.pdf"
-                                patientViewModel.addRecord(
-                                    title = filename,
-                                    category = uploadCategory,
-                                    fileSize = detectedFileSize,
-                                    appointmentId = selectedAppointmentId,
-                                    fileUri = selectedFileUri
-                                )
-                                Toast.makeText(context, "Saved to Medical Vault", Toast.LENGTH_SHORT).show()
-                                showUploadModal = false
+                                try {
+                                    // Copy the picked document into app storage so it can be reopened later
+                                    val stored = FileStorageHelper.importToVault(context, file)
+                                    patientViewModel.addRecord(
+                                        title = FileStorageHelper.titleWithExtension(uploadTitle, file),
+                                        category = uploadCategory,
+                                        fileSize = file.sizeLabel,
+                                        appointmentId = selectedAppointmentId,
+                                        fileUri = stored.absolutePath
+                                    )
+                                    Toast.makeText(context, "Saved to Medical Vault", Toast.LENGTH_SHORT).show()
+                                    showUploadModal = false
+                                } catch (e: Exception) {
+                                    isSaving = false
+                                    Toast.makeText(context, e.message ?: "Could not save the document", Toast.LENGTH_LONG).show()
+                                }
                             }
                         }
                     },
-                    enabled = uploadTitle.isNotBlank(),
+                    enabled = pickedFile != null && uploadTitle.isNotBlank() && !isSaving,
                     colors = ButtonDefaults.buttonColors(containerColor = AvenTeal)
                 ) {
-                    Text("Save to Vault")
+                    Text(if (isSaving) "Saving..." else "Save to Vault")
                 }
             },
             dismissButton = {

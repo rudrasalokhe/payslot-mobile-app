@@ -8,6 +8,7 @@ import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.DoctorProfile
 import com.docdirect.app.data.model.TimeSlot
 import com.docdirect.app.data.repository.AppRepository
+import com.docdirect.app.data.storage.FileStorageHelper
 import kotlinx.coroutines.flow.*
 
 class PatientViewModel(application: Application) : AndroidViewModel(application) {
@@ -222,6 +223,10 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
     }
 
     suspend fun deleteRecord(recordId: String) {
+        // Remove the stored document copy together with its vault entry
+        records.value.firstOrNull { it.id == recordId }?.fileUri?.let {
+            FileStorageHelper.deleteStoredFile(getApplication(), it)
+        }
         repository.deleteRecord(recordId)
     }
 

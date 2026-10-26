@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.ChatMessage
 import com.docdirect.app.data.model.UserRole
+import com.docdirect.app.data.storage.FileStorageHelper
+import kotlinx.coroutines.launch
 import com.docdirect.app.ui.doctor.PrescriptionDialog
 import com.docdirect.app.ui.theme.*
 import com.docdirect.app.utils.PrescriptionPdfGenerator
@@ -457,18 +459,24 @@ fun OnlineChatScreen(
     if (showUploadModal) {
         var docTitle by remember { mutableStateOf("") }
         var docCategory by remember { mutableStateOf("Lab report") }
-        var attachedUri by remember { mutableStateOf("") }
+        var pickedFile by remember { mutableStateOf<FileStorageHelper.PickedFile?>(null) }
+        var isUploading by remember { mutableStateOf(false) }
+        val uploadScope = rememberCoroutineScope()
+        val attachedUri = pickedFile?.uri?.toString().orEmpty()
 
         val filePicker = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
         ) { uri: Uri? ->
             uri?.let {
-                attachedUri = it.toString()
-                val segment = it.lastPathSegment ?: "document"
-                if (docTitle.isBlank()) {
-                    docTitle = segment.substringAfterLast("/").substringAfterLast(":")
+                val file = FileStorageHelper.describe(context, it)
+                val error = FileStorageHelper.validate(file)
+                if (error != null) {
+                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                } else {
+                    pickedFile = file
+                    if (docTitle.isBlank()) docTitle = FileStorageHelper.baseName(file.displayName)
+                    Toast.makeText(context, "Attached: ${file.displayName} (${file.sizeLabel})", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(context, "Attached from device: $docTitle", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -484,7 +492,7 @@ fun OnlineChatScreen(
                     )
 
                     Surface(
-                        onClick = { filePicker.launch("*/*") },
+                        onClick = { filePicker.launch("*/*") }, // PDF/JPG/PNG are validated after picking
                         shape = RoundedCornerShape(12.dp),
                         color = if (attachedUri.isNotBlank()) Color(0xFFE6F4EA) else MaterialTheme.colorScheme.surfaceVariant,
                         modifier = Modifier.fillMaxWidth()
@@ -536,24 +544,34 @@ fun OnlineChatScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (docTitle.isNotBlank()) {
+                        val file = pickedFile
+                        if (file != null && docTitle.isNotBlank() && !isUploading) {
+                            isUploading = true
                             val patientId = if (currentRole == UserRole.PATIENT) senderId else (appointment?.patientId ?: "pat_1")
-                            viewModel.uploadAppointmentDocument(
-                                appointmentId = appointmentId,
-                                patientId = patientId,
-                                title = docTitle,
-                                category = docCategory,
-                                fileSize = "2.0 MB",
-                                fileUri = attachedUri
-                            )
-                            Toast.makeText(context, "Document attached to consultation", Toast.LENGTH_SHORT).show()
-                            showUploadModal = false
+                            uploadScope.launch {
+                                try {
+                                    val stored = FileStorageHelper.importToVault(context, file)
+                                    viewModel.uploadAppointmentDocument(
+                                        appointmentId = appointmentId,
+                                        patientId = patientId,
+                                        title = FileStorageHelper.titleWithExtension(docTitle, file),
+                                        category = docCategory,
+                                        fileSize = file.sizeLabel,
+                                        fileUri = stored.absolutePath
+                                    )
+                                    Toast.makeText(context, "Document attached to consultation", Toast.LENGTH_SHORT).show()
+                                    showUploadModal = false
+                                } catch (e: Exception) {
+                                    isUploading = false
+                                    Toast.makeText(context, e.message ?: "Could not attach the document", Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
                     },
-                    enabled = docTitle.isNotBlank(),
+                    enabled = pickedFile != null && docTitle.isNotBlank() && !isUploading,
                     colors = ButtonDefaults.buttonColors(containerColor = TealPrimary)
                 ) {
-                    Text("Upload & Send")
+                    Text(if (isUploading) "Uploading..." else "Upload & Send")
                 }
             },
             dismissButton = {
