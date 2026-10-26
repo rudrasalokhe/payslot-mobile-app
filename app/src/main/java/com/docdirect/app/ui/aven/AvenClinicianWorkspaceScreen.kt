@@ -289,6 +289,22 @@ fun AvenClinicianWorkspaceScreen(
                 }
             }
 
+            // Custom Slot & Availability Planner Card (Days on/off, timings 10am-2pm, fees)
+            item {
+                DoctorCustomSlotPlannerCard(
+                    doctor = doctor,
+                    doctorViewModel = doctorViewModel
+                )
+            }
+
+            // Custom Slot & Availability Planner Card (Days on/off, timings 10am-2pm, fees)
+            item {
+                DoctorCustomSlotPlannerCard(
+                    doctor = doctor,
+                    doctorViewModel = doctorViewModel
+                )
+            }
+
             // Next Patient Up for Consultation
             item {
                 Text("Next Scheduled Consultation", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AvenInk)
@@ -812,6 +828,426 @@ fun AvenDoctorProfileEditDialog(
                         Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Save Changes", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun DoctorCustomSlotPlannerCard(
+    doctor: DoctorProfile,
+    doctorViewModel: DoctorViewModel
+) {
+    val availableSlots by doctorViewModel.availableSlots.collectAsState(initial = emptyList())
+
+    val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    var activeDays by remember {
+        mutableStateOf(
+            mapOf(
+                "Mon" to true,
+                "Tue" to true,
+                "Wed" to true,
+                "Thu" to true,
+                "Fri" to true,
+                "Sat" to false,
+                "Sun" to false
+            )
+        )
+    }
+
+    var selectedTimingPreset by remember { mutableStateOf("10:00 AM – 2:00 PM") }
+    var startTime by remember { mutableStateOf("10:00 AM") }
+    var endTime by remember { mutableStateOf("02:00 PM") }
+    var slotDurationMins by remember { mutableStateOf(30) }
+    var feeInput by remember { mutableStateOf(doctor.consultationFee.toInt().toString()) }
+
+    var feedbackBanner by remember { mutableStateOf<String?>(null) }
+    var isExpanded by remember { mutableStateOf(true) }
+
+    LaunchedEffect(doctor.consultationFee) {
+        feeInput = doctor.consultationFee.toInt().toString()
+    }
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = AvenWhite,
+        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            // Header Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(AvenMint),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "Custom Slot & Availability Planner",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AvenInk
+                        )
+                        Text(
+                            text = "Manage active days, consultation hours & fees",
+                            fontSize = 11.sp,
+                            color = AvenMuted
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = AvenInk
+                )
+            }
+
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(14.dp))
+                HorizontalDivider(color = AvenLine)
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // 1. Day Toggle On/Off Row
+                Text(
+                    text = "Weekly Schedule: Toggle Days On / Off",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AvenInk
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    daysOfWeek.forEach { day ->
+                        val isOn = activeDays[day] == true
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isOn) AvenTeal else AvenSoft,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isOn) AvenTeal else AvenLine),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 2.dp)
+                                .clickable {
+                                    activeDays = activeDays.toMutableMap().apply { put(day, !isOn) }
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = day,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isOn) AvenWhite else AvenInk
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = if (isOn) "ON" else "OFF",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isOn) AvenLime else AvenMuted
+                                )
+                            }
+                        }
+                    }
+                }
+
+                val activeCount = activeDays.values.count { it }
+                Text(
+                    text = "$activeCount working day(s) active for consultations",
+                    fontSize = 11.sp,
+                    color = AvenTeal,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // 2. Consultation Timings Customizer
+                Text(
+                    text = "Consultation Timings (e.g. 10:00 AM – 2:00 PM)",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AvenInk
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val timingPresets = listOf(
+                    "10:00 AM – 2:00 PM",
+                    "02:00 PM – 06:00 PM",
+                    "09:00 AM – 01:00 PM",
+                    "06:00 PM – 09:00 PM"
+                )
+
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(timingPresets) { preset ->
+                        val isSel = preset == selectedTimingPreset
+                        Surface(
+                            shape = RoundedCornerShape(100.dp),
+                            color = if (isSel) AvenTeal else AvenSoft,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isSel) AvenTeal else AvenLine),
+                            modifier = Modifier.clickable {
+                                selectedTimingPreset = preset
+                                val parts = preset.split("–").map { it.trim() }
+                                if (parts.size == 2) {
+                                    startTime = parts[0]
+                                    endTime = parts[1]
+                                }
+                            }
+                        ) {
+                            Text(
+                                text = preset,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSel) AvenWhite else AvenInk,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Start Time", fontSize = 11.sp, color = AvenMuted, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(3.dp))
+                        OutlinedTextField(
+                            value = startTime,
+                            onValueChange = { startTime = it },
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AvenTeal,
+                                unfocusedBorderColor = AvenLine
+                            )
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("End Time", fontSize = 11.sp, color = AvenMuted, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(3.dp))
+                        OutlinedTextField(
+                            value = endTime,
+                            onValueChange = { endTime = it },
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AvenTeal,
+                                unfocusedBorderColor = AvenLine
+                            )
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(0.9f)) {
+                        Text("Duration", fontSize = 11.sp, color = AvenMuted, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = AvenSoft,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .clickable {
+                                    slotDurationMins = when (slotDurationMins) {
+                                        15 -> 30
+                                        30 -> 45
+                                        45 -> 60
+                                        else -> 15
+                                    }
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("$slotDurationMins min", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenInk)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Generate Slots Button
+                Button(
+                    onClick = {
+                        val activeDaysList = activeDays.filter { it.value }.keys.toList()
+                        if (activeDaysList.isEmpty()) {
+                            feedbackBanner = "Please toggle at least one day ON to publish slots."
+                        } else {
+                            val generatedTimes = when {
+                                startTime.contains("10") -> listOf("10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM")
+                                startTime.contains("09") -> listOf("09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM")
+                                startTime.contains("02") || startTime.contains("2") -> listOf("02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM")
+                                else -> listOf(startTime, "11:00 AM", "12:00 PM", "01:00 PM")
+                            }
+                            listOf("Today", "Tomorrow").forEach { dateStr ->
+                                generatedTimes.forEach { slotTime ->
+                                    doctorViewModel.addSlot(dateStr, slotTime)
+                                }
+                            }
+                            feedbackBanner = "Generated ${generatedTimes.size * 2} availability slots ($startTime – $endTime) across active days."
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                    modifier = Modifier.fillMaxWidth().height(46.dp)
+                ) {
+                    Icon(Icons.Default.AddAlarm, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Publish Slots ($startTime – $endTime)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 3. Consultation Fee Adjuster
+                Text(
+                    text = "Consultation Fee Adjuster",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AvenInk
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val feePresets = listOf(800, 1000, 1200, 1500, 2000)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(feePresets) { presetFee ->
+                        val isFeeSel = feeInput == presetFee.toString()
+                        Surface(
+                            shape = RoundedCornerShape(100.dp),
+                            color = if (isFeeSel) AvenTeal else AvenSoft,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isFeeSel) AvenTeal else AvenLine),
+                            modifier = Modifier.clickable { feeInput = presetFee.toString() }
+                        ) {
+                            Text(
+                                text = "₹$presetFee",
+                                fontSize = 11.sp,
+                                fontWeight = if (isFeeSel) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isFeeSel) AvenWhite else AvenInk,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = feeInput,
+                        onValueChange = { feeInput = it },
+                        label = { Text("Consultation Fee (₹)", fontSize = 11.sp) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AvenTeal,
+                            unfocusedBorderColor = AvenLine
+                        )
+                    )
+
+                    Button(
+                        onClick = {
+                            val parsedFee = feeInput.toDoubleOrNull()
+                            if (parsedFee != null && parsedFee > 0) {
+                                doctorViewModel.updateFee(parsedFee)
+                                feedbackBanner = "Consultation fee updated to ₹${parsedFee.toInt()}! Live in patient booking."
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                        modifier = Modifier.height(52.dp)
+                    ) {
+                        Text("Update Fee", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+                }
+
+                if (feedbackBanner != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = AvenMint,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = feedbackBanner ?: "",
+                            modifier = Modifier.padding(10.dp),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AvenTeal
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // 4. Current Active Slots Strip
+                Text(
+                    text = "Live Active Slots (${availableSlots.size})",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AvenInk
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                if (availableSlots.isEmpty()) {
+                    Text("No slots published yet. Use the planner above to generate timings.", fontSize = 11.sp, color = AvenMuted)
+                } else {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(availableSlots.take(12)) { slot ->
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (slot.isBooked) AvenSoft else AvenMint,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, if (slot.isBooked) AvenLine else AvenTeal.copy(alpha = 0.3f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text("${slot.date} • ${slot.time}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (slot.isBooked) AvenMuted else AvenTeal)
+                                        Text(if (slot.isBooked) "Booked" else "Available", fontSize = 9.sp, color = if (slot.isBooked) AvenRed else AvenTeal)
+                                    }
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Remove slot",
+                                        tint = AvenMuted,
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clickable { doctorViewModel.deleteSlot(slot.id) }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
