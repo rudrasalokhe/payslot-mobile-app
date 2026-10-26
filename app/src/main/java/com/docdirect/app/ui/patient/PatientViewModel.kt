@@ -240,4 +240,9 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
     suspend fun markNotificationRead(id: String) {
         repository.markNotificationRead(id)
     }
+
+    suspend fun markAllNotificationsRead() {
+        val uid = currentUserId.ifBlank { "user_aarav_mehta" }
+        repository.markAllNotificationsRead(uid)
+    }
 }

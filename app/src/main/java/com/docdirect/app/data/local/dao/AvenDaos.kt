@@ -80,6 +80,9 @@ interface NotificationDao {
 
     @Query("UPDATE notifications SET isRead = 1 WHERE id = :id")
     suspend fun markAsRead(id: String)
+
+    @Query("UPDATE notifications SET isRead = 1 WHERE userId = :userId")
+    suspend fun markAllAsRead(userId: String)
 }
 
 @Dao

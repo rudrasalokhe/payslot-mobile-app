@@ -1009,6 +1009,7 @@ class AppRepository private constructor(context: Context) {
     // Notifications Flow
     fun getNotificationsForUser(userId: String): Flow<List<NotificationEntity>> = notificationDao.getNotificationsForUser(userId)
     suspend fun markNotificationRead(id: String) = notificationDao.markAsRead(id)
+    suspend fun markAllNotificationsRead(userId: String) = notificationDao.markAllAsRead(userId)
 
     // Chat Flow
     fun getMessagesForAppointment(appointmentId: String): Flow<List<ChatMessage>> {
