@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.docdirect.app.data.local.entity.RecordEntity
+import com.docdirect.app.data.local.entity.InvoiceEntity
 import com.docdirect.app.data.model.*
 import com.docdirect.app.data.repository.AppRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -81,6 +82,12 @@ class DoctorViewModel(application: Application) : AndroidViewModel(application) 
     val todayAppointments: StateFlow<List<Appointment>> = appointments.map { list ->
         list.filter { it.appointmentDate.contains("25 Sep", ignoreCase = true) || it.appointmentDate.equals("Today", ignoreCase = true) }
     }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val invoices: StateFlow<List<InvoiceEntity>> = repository.getAllInvoices().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
