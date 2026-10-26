@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.docdirect.app.data.storage.FileStorageHelper
 import com.docdirect.app.utils.PrescriptionPdfGenerator
 import com.docdirect.app.data.model.Appointment
 import com.docdirect.app.data.model.AppointmentStatus
@@ -388,18 +390,26 @@ fun AvenClinicianWorkspaceScreen(
                                         attachedRecords.forEach { rec ->
                                             Row(
                                                 modifier = Modifier.fillMaxWidth().clickable {
-                                                    val pdf = PrescriptionPdfGenerator.generatePrescriptionPdf(
-                                                        context = context,
-                                                        doctorName = doctor.name.ifBlank { "Dr Mira Shah" },
-                                                        doctorSpecialty = doctor.specialty.ifBlank { "Dermatology" },
-                                                        doctorLicense = doctor.medicalLicense.ifBlank { "MCI-48921-DERM" },
-                                                        clinicName = "DocDirect Medical Clinic",
-                                                        patientName = activeAppointment.patientName,
-                                                        consultationId = activeAppointment.id,
-                                                        consultationDate = activeAppointment.appointmentDate,
-                                                        dosageInstructions = "Attached Consultation Record: ${rec.title} (${rec.category})"
-                                                    )
-                                                    PrescriptionPdfGenerator.sharePrescriptionPdf(context, pdf)
+                                                    coroutineScope.launch {
+                                                        if (FileStorageHelper.isStoredOnDevice(context, rec.fileUri)) {
+                                                            // The real uploaded file is on this device: open it in the native viewer
+                                                            val error = FileStorageHelper.openStoredDocument(context, rec.fileUri, rec.title)
+                                                            if (error != null) Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                                                        } else {
+                                                            val pdf = PrescriptionPdfGenerator.generatePrescriptionPdf(
+                                                                context = context,
+                                                                doctorName = doctor.name.ifBlank { "Dr Mira Shah" },
+                                                                doctorSpecialty = doctor.specialty.ifBlank { "Dermatology" },
+                                                                doctorLicense = doctor.medicalLicense.ifBlank { "MCI-48921-DERM" },
+                                                                clinicName = "DocDirect Medical Clinic",
+                                                                patientName = activeAppointment.patientName,
+                                                                consultationId = activeAppointment.id,
+                                                                consultationDate = activeAppointment.appointmentDate,
+                                                                dosageInstructions = "Attached Consultation Record: ${rec.title} (${rec.category})"
+                                                            )
+                                                            PrescriptionPdfGenerator.viewPrescriptionPdf(context, pdf)
+                                                        }
+                                                    }
                                                 },
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {

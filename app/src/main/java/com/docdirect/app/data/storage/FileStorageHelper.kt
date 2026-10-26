@@ -1,9 +1,15 @@
 package com.docdirect.app.data.storage
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import android.webkit.MimeTypeMap
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -28,7 +34,11 @@ object FileStorageHelper {
     /** Maximum accepted document size. */
     const val MAX_FILE_BYTES = 20L * 1024 * 1024
 
+    private const val TAG = "FileStorageHelper"
     private const val VAULT_DIR = "vault"
+    private const val ENCRYPTED_SUFFIX = ".enc"
+    private const val VIEW_CACHE_DIR = "vault_view"
+    private const val VIEW_CACHE_MAX_AGE_MS = 10 * 60 * 1000L
     private val ALLOWED_MIME_TYPES = setOf(MIME_PDF, MIME_JPEG, MIME_PNG)
 
     data class PickedFile(
@@ -92,21 +102,140 @@ object FileStorageHelper {
         }
     }
 
-    /** Copies the picked document into the app's private vault folder and returns the copy. */
+    /**
+     * Copies the picked document into the app's private vault folder, encrypted with
+     * AES-256-GCM (see [VaultCipher]), and returns the encrypted copy.
+     */
     suspend fun importToVault(context: Context, file: PickedFile): File = withContext(Dispatchers.IO) {
         val dir = vaultDir(context).apply { mkdirs() }
-        val target = File(dir, "${UUID.randomUUID()}.${extensionFor(file)}")
+        val target = File(dir, "${UUID.randomUUID()}.${extensionFor(file)}$ENCRYPTED_SUFFIX")
         try {
             val input = context.contentResolver.openInputStream(file.uri)
                 ?: throw IOException("Unable to open the selected file")
             input.use { source ->
-                target.outputStream().use { sink -> copyLimited(source, sink) }
+                VaultCipher.openEncryptingStream(target.outputStream()).use { sink ->
+                    copyLimited(source, sink)
+                }
             }
         } catch (e: Exception) {
             target.delete()
             throw e
         }
         target
+    }
+
+    /** True when [path] is a vault file this helper can decrypt and show. */
+    fun isStoredOnDevice(context: Context, path: String): Boolean {
+        return resolveVaultFile(context, path)?.exists() == true
+    }
+
+    /**
+     * Opens a stored document in the device's native reader (Google Drive PDF viewer, Adobe
+     * Reader, Photos...) through an ACTION_VIEW intent. Encrypted files are decrypted into a
+     * short-lived cache file that is exposed through FileProvider and purged later.
+     * Returns null on success, otherwise a user-facing error message.
+     */
+    suspend fun openStoredDocument(context: Context, path: String, title: String): String? =
+        launchDocumentIntent(context, path, title, share = false)
+
+    /** Shares the real stored document (decrypted copy) with another app. */
+    suspend fun shareStoredDocument(context: Context, path: String, title: String): String? =
+        launchDocumentIntent(context, path, title, share = true)
+
+    /** Deletes decrypted view copies older than [maxAgeMs]; pass 0 to remove all of them. */
+    fun purgeViewCache(context: Context, maxAgeMs: Long = VIEW_CACHE_MAX_AGE_MS) {
+        try {
+            val root = File(context.cacheDir, VIEW_CACHE_DIR)
+            val cutoff = System.currentTimeMillis() - maxAgeMs
+            root.listFiles()?.forEach { entry ->
+                if (maxAgeMs <= 0L || entry.lastModified() < cutoff) entry.deleteRecursively()
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    private suspend fun launchDocumentIntent(
+        context: Context,
+        path: String,
+        title: String,
+        share: Boolean
+    ): String? {
+        val prepared = try {
+            withContext(Dispatchers.IO) { prepareViewableCopy(context, path, title) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Unable to prepare document", e)
+            return "This document could not be decrypted on this device."
+        } ?: return "This document is no longer stored on this device."
+
+        val (file, mime) = prepared
+        return try {
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+            val intent = if (share) {
+                Intent(Intent.ACTION_SEND).apply {
+                    type = mime
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, title)
+                }
+            } else {
+                Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, mime) }
+            }
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            intent.clipData = ClipData.newRawUri(title, uri)
+
+            val chooser = Intent.createChooser(intent, if (share) "Share document" else "Open with").apply {
+                if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
+            null
+        } catch (e: ActivityNotFoundException) {
+            "No app on this device can open ${if (mime == MIME_PDF) "PDF" else "image"} files."
+        } catch (e: Exception) {
+            Log.e(TAG, "Unable to open document", e)
+            "Could not open the document."
+        }
+    }
+
+    /** Returns a readable file (decrypted if needed) and its MIME type, or null if the file is gone. */
+    private fun prepareViewableCopy(context: Context, path: String, title: String): Pair<File, String>? {
+        val stored = resolveVaultFile(context, path)?.takeIf { it.exists() } ?: return null
+        val mime = mimeForStoredPath(stored.name)
+        if (!stored.name.endsWith(ENCRYPTED_SUFFIX)) return stored to mime
+
+        val ext = stored.name.removeSuffix(ENCRYPTED_SUFFIX).substringAfterLast('.')
+        val safeName = title.replace(Regex("[^A-Za-z0-9._ -]"), "_").trim().ifBlank { "document" }
+            .let { if (it.endsWith(".$ext", ignoreCase = true)) it else "$it.$ext" }
+        val dir = File(context.cacheDir, "$VIEW_CACHE_DIR/${UUID.randomUUID()}").apply { mkdirs() }
+        val out = File(dir, safeName)
+        try {
+            stored.inputStream().use { raw ->
+                VaultCipher.openDecryptingStream(raw).use { plain ->
+                    out.outputStream().use { sink -> plain.copyTo(sink) }
+                }
+            }
+        } catch (e: Exception) {
+            dir.deleteRecursively()
+            throw e
+        }
+        return out to mime
+    }
+
+    /** Only paths inside the private vault folder are ever opened. */
+    private fun resolveVaultFile(context: Context, path: String): File? {
+        if (path.isBlank()) return null
+        return try {
+            val file = File(path)
+            if (file.canonicalPath.startsWith(vaultDir(context).canonicalPath + File.separator)) file else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun mimeForStoredPath(fileName: String): String {
+        return when (fileName.removeSuffix(ENCRYPTED_SUFFIX).substringAfterLast('.').lowercase(Locale.ROOT)) {
+            "pdf" -> MIME_PDF
+            "png" -> MIME_PNG
+            else -> MIME_JPEG
+        }
     }
 
     /** Deletes a file previously created by [importToVault]; paths outside the vault are ignored. */

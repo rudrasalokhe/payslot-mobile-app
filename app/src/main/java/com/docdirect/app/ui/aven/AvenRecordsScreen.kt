@@ -36,7 +36,9 @@ import com.docdirect.app.data.storage.FileStorageHelper
 import com.docdirect.app.ui.patient.PatientViewModel
 import com.docdirect.app.ui.theme.*
 import com.docdirect.app.utils.PrescriptionPdfGenerator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AvenRecordsScreen(
@@ -67,6 +69,24 @@ fun AvenRecordsScreen(
 
     var selectedPatient by remember { mutableStateOf("Aarav Mehta") }
     var showPatientPicker by remember { mutableStateOf(false) }
+
+    // Drop decrypted view copies left behind by previous "Open" actions
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) { FileStorageHelper.purgeViewCache(context) }
+    }
+
+    // Certificate PDF used for demo records that have no attached file
+    fun buildRecordCertificate(record: RecordEntity) = PrescriptionPdfGenerator.generatePrescriptionPdf(
+        context = context,
+        doctorName = if (record.sharedWithDoctorName.isNotBlank()) record.sharedWithDoctorName else "Dr Mira Shah",
+        doctorSpecialty = "Dermatologist & Cosmetologist",
+        doctorLicense = "MCI-48921-DERM",
+        clinicName = "DocDirect Bandra Clinic, Mumbai",
+        patientName = selectedPatient,
+        consultationId = record.appointmentId.ifBlank { "AV-REC-${record.id.takeLast(6)}" },
+        consultationDate = record.date,
+        dosageInstructions = "Verified Vault Record: ${record.title} (${record.category})\nAuthorized digital medical record certificate."
+    )
 
     // Pre-calculate latest vitals
     val latestBp = remember(vitalsList) { vitalsList.filter { it.type == "Blood Pressure" }.maxByOrNull { it.timestamp } }
@@ -1080,7 +1100,11 @@ fun AvenRecordsScreen(
                             Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Verified cryptographic hash: SHA256:7f9a...3b21. Storage encrypted at rest in local Room SQLite DB.",
+                                text = if (record.fileUri.endsWith(".enc")) {
+                                    "Encrypted on this device with AES-256-GCM. The key is held in the Android Keystore and the file is only decrypted briefly when you open it."
+                                } else {
+                                    "Record entry stored in your local vault database."
+                                },
                                 fontSize = 11.sp,
                                 color = AvenMuted,
                                 lineHeight = 16.sp
@@ -1091,31 +1115,44 @@ fun AvenRecordsScreen(
             },
             confirmButton = {
                 Button(
-onClick = {
-                        val pdf = PrescriptionPdfGenerator.generatePrescriptionPdf(
-                            context = context,
-                            doctorName = if (record.sharedWithDoctorName.isNotBlank()) record.sharedWithDoctorName else "Dr Mira Shah",
-                            doctorSpecialty = "Dermatologist & Cosmetologist",
-                            doctorLicense = "MCI-48921-DERM",
-                            clinicName = "DocDirect Bandra Clinic, Mumbai",
-                            patientName = selectedPatient,
-                            consultationId = record.appointmentId.ifBlank { "AV-REC-${record.id.takeLast(6)}" },
-                            consultationDate = record.date,
-                            dosageInstructions = "Verified Vault Record: ${record.title} (${record.category})\nAuthorized digital medical record certificate."
-                        )
-                        PrescriptionPdfGenerator.sharePrescriptionPdf(context, pdf)
+                    onClick = {
+                        coroutineScope.launch {
+                            if (record.fileUri.isBlank()) {
+                                // Demo / manual entries have no attached file: show the generated certificate
+                                PrescriptionPdfGenerator.viewPrescriptionPdf(context, buildRecordCertificate(record))
+                            } else {
+                                val error = FileStorageHelper.openStoredDocument(context, record.fileUri, record.title)
+                                if (error != null) Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Share / Export PDF", color = AvenWhite, fontWeight = FontWeight.Bold)
+                    Text("Open", color = AvenWhite, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { recordDetailModal = null }) {
-                    Text("Close", color = AvenMuted, fontWeight = FontWeight.SemiBold)
+                Row {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                if (record.fileUri.isBlank()) {
+                                    PrescriptionPdfGenerator.sharePrescriptionPdf(context, buildRecordCertificate(record))
+                                } else {
+                                    val error = FileStorageHelper.shareStoredDocument(context, record.fileUri, record.title)
+                                    if (error != null) Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Share", color = AvenTeal, fontWeight = FontWeight.SemiBold)
+                    }
+                    TextButton(onClick = { recordDetailModal = null }) {
+                        Text("Close", color = AvenMuted, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         )

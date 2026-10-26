@@ -15,6 +15,8 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PaymentManager.init(applicationContext)
+        // Decrypted document copies from a previous run are no longer needed
+        Thread { com.docdirect.app.data.storage.FileStorageHelper.purgeViewCache(applicationContext, 0L) }.start()
         com.docdirect.app.data.firebase.FirebaseSyncManager.init(applicationContext)
         setContent {
             Surface(
