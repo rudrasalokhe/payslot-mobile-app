@@ -1057,8 +1057,7 @@ onClick = {
                             patientName = selectedPatient,
                             consultationId = record.appointmentId.ifBlank { "AV-REC-${record.id.takeLast(6)}" },
                             consultationDate = record.date,
-                            dosageInstructions = "Verified Vault Record: ${record.title} (${record.category})
-Authorized digital medical record certificate."
+                            dosageInstructions = "Verified Vault Record: ${record.title} (${record.category})\nAuthorized digital medical record certificate."
                         )
                         PrescriptionPdfGenerator.sharePrescriptionPdf(context, pdf)
                     },

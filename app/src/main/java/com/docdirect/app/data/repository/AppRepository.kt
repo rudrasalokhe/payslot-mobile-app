@@ -1000,6 +1000,7 @@ class AppRepository private constructor(context: Context) {
             status = entity.status,
             transactionId = entity.transactionId,
             prescription = entity.prescription,
+            paymentMethod = entity.paymentMethod,
             createdAt = entity.createdAt
         )
     }

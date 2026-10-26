@@ -29,6 +29,7 @@ data class AppointmentEntity(
     val status: AppointmentStatus = AppointmentStatus.UPCOMING,
     val transactionId: String = "",
     val prescription: String = "",
+    val paymentMethod: String = "Online / UPI",
     val createdAt: Long = System.currentTimeMillis()
 )
 

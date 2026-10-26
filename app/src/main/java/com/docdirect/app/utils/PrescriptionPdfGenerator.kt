@@ -143,8 +143,7 @@ object PrescriptionPdfGenerator {
             paint.textSize = 12f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
 
-            val lines = finalInstructions.ifBlank { "Prescribed medication as clinically indicated. Follow oral dosage regimen after meals." }.split("
-")
+            val lines = finalInstructions.ifBlank { "Prescribed medication as clinically indicated. Follow oral dosage regimen after meals." }.split("\n")
             for (rawLine in lines) {
                 // Word wrap long lines
                 val words = rawLine.split(" ")
