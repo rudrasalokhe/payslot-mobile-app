@@ -59,6 +59,7 @@ fun AvenClinicianWorkspaceScreen(
     var showSuccessToast by remember { mutableStateOf(false) }
     var showProfileSavedBanner by remember { mutableStateOf(false) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
+    var showPatientHistoryModal by remember { mutableStateOf(false) }
 
     val doctorInitials = remember(doctor.name) {
         val parts = doctor.name.trim().split(" ")
@@ -418,7 +419,55 @@ fun AvenClinicianWorkspaceScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // 1-Tap Patient History & Complaints Summary Action
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = AvenMint,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenTeal.copy(alpha = 0.4f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showPatientHistoryModal = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.HistoryEdu, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = "1-Tap Patient History Preview",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AvenTeal
+                                        )
+                                        Text(
+                                            text = "Complaints, past visits & medical records",
+                                            fontSize = 10.sp,
+                                            color = AvenTeal.copy(alpha = 0.8f)
+                                        )
+                                    }
+                                }
+                                Surface(
+                                    color = AvenTeal,
+                                    shape = RoundedCornerShape(100.dp)
+                                ) {
+                                    Text(
+                                        text = "View Summary →",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AvenWhite,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         // Live Call Action
                         Button(
@@ -532,6 +581,36 @@ fun AvenClinicianWorkspaceScreen(
 
             item { Spacer(modifier = Modifier.height(30.dp)) }
         }
+    }
+
+    // 1-Tap Patient Clinical History Preview Dialog
+    if (showPatientHistoryModal) {
+        PatientClinicalHistoryDialog(
+            patientName = activeAppointment.patientName,
+            symptoms = activeAppointment.symptoms,
+            appointmentDate = activeAppointment.appointmentDate,
+            appointmentTime = activeAppointment.appointmentTime,
+            onDismiss = { showPatientHistoryModal = false },
+            onStartCall = {
+                showPatientHistoryModal = false
+                onStartVideoCall(activeAppointment.id, activeAppointment.patientName)
+            }
+        )
+    }
+
+    // 1-Tap Patient Clinical History Preview Dialog
+    if (showPatientHistoryModal) {
+        PatientClinicalHistoryDialog(
+            patientName = activeAppointment.patientName,
+            symptoms = activeAppointment.symptoms,
+            appointmentDate = activeAppointment.appointmentDate,
+            appointmentTime = activeAppointment.appointmentTime,
+            onDismiss = { showPatientHistoryModal = false },
+            onStartCall = {
+                showPatientHistoryModal = false
+                onStartVideoCall(activeAppointment.id, activeAppointment.patientName)
+            }
+        )
     }
 
     // Modal Edit Profile Dialog
@@ -1624,6 +1703,282 @@ fun DoctorEarningsDashboardCard(
                             fontWeight = FontWeight.SemiBold,
                             color = AvenTeal
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PatientClinicalHistoryDialog(
+    patientName: String,
+    symptoms: String,
+    appointmentDate: String,
+    appointmentTime: String,
+    onDismiss: () -> Unit,
+    onStartCall: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = AvenWhite,
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.88f)
+                .clip(RoundedCornerShape(24.dp))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(AvenMint),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.MedicalServices, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = "Patient Clinical History",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AvenInk
+                            )
+                            Text(
+                                text = "$patientName • 28y, Male (O+)",
+                                fontSize = 12.sp,
+                                color = AvenMuted
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(AvenSoft)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = AvenInk, modifier = Modifier.size(16.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+                HorizontalDivider(color = AvenLine)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Scrollable Body
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // 1. Current Visit Chief Complaints
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = AvenSoft,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("TODAY'S CHIEF COMPLAINTS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AvenTeal, letterSpacing = 0.5.sp)
+                                Surface(
+                                    color = Color(0xFFFFF3E0),
+                                    shape = RoundedCornerShape(100.dp)
+                                ) {
+                                    Text(
+                                        text = "Moderate Severity (4/10)",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFE65100),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = symptoms.ifBlank { "Patient presents for follow-up evaluation. Mild erythema, skin barrier irritation post chemical treatment." },
+                                fontSize = 13.sp,
+                                color = AvenInk,
+                                lineHeight = 18.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text("• Onset: 5 days ago", fontSize = 11.sp, color = AvenMuted)
+                                Text("• Aggravating: Direct sun, friction", fontSize = 11.sp, color = AvenMuted)
+                            }
+                        }
+                    }
+
+                    // 2. Patient Health Profile & Allergies Strip
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color(0xFFFBE9E7),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFCCBC)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.WarningAmber, contentDescription = null, tint = Color(0xFFD84315), modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text("Allergies & Contraindications", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD84315))
+                                Text("Penicillin (Rash), Dust Mites • No known drug adverse events", fontSize = 11.sp, color = Color(0xFF4E342E))
+                            }
+                        }
+                    }
+
+                    // 3. Chronological Past Visits Timeline
+                    Text("Past Consultations & Clinical Outcomes", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenInk)
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Past Visit 1
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = AvenWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("12 Aug 2026 • Video Consultation", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AvenInk)
+                                    Text("Dr Mira Shah", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AvenTeal)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Diagnosis: Acute Contact Dermatitis (Facial)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                                Text("Rx Issued: Hydrocortisone 1% lotion + Barrier ceramides twice daily. Follow-up advised.", fontSize = 11.sp, color = AvenMuted)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Outcome: Resolved within 10 days with complete recovery.", fontSize = 10.sp, color = AvenTeal, fontWeight = FontWeight.Medium)
+                            }
+                        }
+
+                        // Past Visit 2
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = AvenWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("24 May 2026 • General Medicine", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AvenInk)
+                                    Text("Dr Rajesh Kulkarni", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AvenTeal)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Diagnosis: Seasonal Allergic Rhinitis", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AvenInk)
+                                Text("Rx Issued: Cetirizine 10mg OD x 5 days + Saline nasal spray.", fontSize = 11.sp, color = AvenMuted)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Outcome: Symptoms subsided successfully.", fontSize = 10.sp, color = AvenTeal, fontWeight = FontWeight.Medium)
+                            }
+                        }
+
+                        // Past Visit 3
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = AvenWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("15 Jan 2026 • Annual Health Checkup", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AvenInk)
+                                    Text("DocDirect Health Screening", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AvenTeal)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Baseline Vitals: BP 118/76 mmHg • HR 72 bpm • SpO2 99%", fontSize = 11.sp, color = AvenMuted)
+                                Text("Laboratory: Fasting Sugar 92 mg/dL • Total IgE: 140 IU/mL", fontSize = 11.sp, color = AvenMuted)
+                            }
+                        }
+                    }
+
+                    // 4. Lab Documents Vault
+                    Text("Verified Lab Documents in Patient Vault", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenInk)
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = AvenSoft,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.AttachFile, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Blood-test-report.pdf (Comprehensive Metabolic Panel • Verified)", fontSize = 11.sp, color = AvenInk, fontWeight = FontWeight.Medium)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.AttachFile, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Skin-allergy-panel.pdf (Dermatology Allergen Screen)", fontSize = 11.sp, color = AvenInk, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+                HorizontalDivider(color = AvenLine)
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Actions: Cancel or Jump straight into Call
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AvenLine),
+                        modifier = Modifier.weight(1f).height(48.dp)
+                    ) {
+                        Text("Close Summary", fontSize = 13.sp, color = AvenInk)
+                    }
+
+                    Button(
+                        onClick = onStartCall,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AvenTeal),
+                        modifier = Modifier.weight(1.5f).height(48.dp)
+                    ) {
+                        Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp), tint = AvenWhite)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Jump into Video Visit", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AvenWhite)
                     }
                 }
             }
