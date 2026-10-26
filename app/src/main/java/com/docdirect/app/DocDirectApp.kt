@@ -24,6 +24,7 @@ import com.docdirect.app.ui.doctor.DoctorViewModel
 import com.docdirect.app.ui.doctor.SlotManagerScreen
 import com.docdirect.app.ui.patient.*
 import com.docdirect.app.ui.theme.DocDirectTheme
+import com.docdirect.app.utils.NotificationRouter
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -433,6 +434,17 @@ fun DocDirectApp() {
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
+        }
+
+        // Open the screen a tapped notification points to (e.g. "Tap to Join" -> video call).
+        // Declared after NavHost so the graph exists before the first navigation.
+        val pendingRoute by NotificationRouter.pendingRoute.collectAsState()
+        LaunchedEffect(pendingRoute) {
+            val route = pendingRoute ?: return@LaunchedEffect
+            if (authViewModel.isLoggedIn()) {
+                navController.navigate(route) { launchSingleTop = true }
+            }
+            NotificationRouter.consume()
         }
     }
 }

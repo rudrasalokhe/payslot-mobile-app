@@ -1,5 +1,6 @@
 package com.docdirect.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.docdirect.app.data.payment.PaymentManager
+import com.docdirect.app.utils.NotificationRouter
 import com.razorpay.PaymentData
 import com.razorpay.PaymentResultWithDataListener
 
@@ -18,6 +20,8 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
         // Decrypted document copies from a previous run are no longer needed
         Thread { com.docdirect.app.data.storage.FileStorageHelper.purgeViewCache(applicationContext, 0L) }.start()
         com.docdirect.app.data.firebase.FirebaseSyncManager.init(applicationContext)
+        // Only the first launch carries the notification extras; a rotation restores the old intent
+        if (savedInstanceState == null) NotificationRouter.handleIntent(intent)
         setContent {
             Surface(
                 modifier = Modifier.fillMaxSize(),
@@ -26,6 +30,12 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                 DocDirectApp()
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        NotificationRouter.handleIntent(intent)
     }
 
     override fun onPaymentSuccess(razorpayPaymentId: String?, paymentData: PaymentData?) {
