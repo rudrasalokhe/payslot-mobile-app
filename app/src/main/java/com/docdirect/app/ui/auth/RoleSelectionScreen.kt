@@ -51,7 +51,7 @@ fun RoleSelectionScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Welcome to DocDirect",
+                text = "Welcome to Payslot",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )

@@ -99,7 +99,7 @@ fun AvenLoginScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "A",
+                        "P",
                         color = AvenWhite,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -109,7 +109,7 @@ fun AvenLoginScreen(
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = "aven",
+                    text = "payslot",
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = AvenInk,

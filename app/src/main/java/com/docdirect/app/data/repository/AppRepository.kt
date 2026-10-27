@@ -167,8 +167,8 @@ class AppRepository private constructor(context: Context) {
                     qualification = "MBBS, MD",
                     experienceYears = 5,
                     consultationFee = 999.0,
-                    bio = "Clinician practicing on DocDirect.",
-                    hospitalAffiliation = "DocDirect Telehealth",
+                    bio = "Clinician practicing on Payslot.",
+                    hospitalAffiliation = "Payslot Telehealth",
                     isAvailable = true
                 )
                 doctorDao.insertDoctor(newDoc)

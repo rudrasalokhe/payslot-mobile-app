@@ -171,7 +171,7 @@ fun ForgotPasswordScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "A",
+                        text = "P",
                         color = AvenWhite,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -179,7 +179,7 @@ fun ForgotPasswordScreen(
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "aven",
+                    text = "payslot",
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = AvenInk,

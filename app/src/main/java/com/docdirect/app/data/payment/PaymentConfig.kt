@@ -10,6 +10,6 @@ object PaymentConfig {
 
     // Default UPI Payment Parameters
     const val DEFAULT_UPI_VPA: String = "payslot.telehealth@okaxis"
-    const val MERCHANT_NAME: String = "DocDirect Telehealth"
+    const val MERCHANT_NAME: String = "Payslot Telehealth"
     const val MERCHANT_CATEGORY_CODE: String = "8062" // Healthcare / Doctors
 }

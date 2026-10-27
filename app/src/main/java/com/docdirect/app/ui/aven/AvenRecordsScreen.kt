@@ -81,7 +81,7 @@ fun AvenRecordsScreen(
         doctorName = if (record.sharedWithDoctorName.isNotBlank()) record.sharedWithDoctorName else "Dr Mira Shah",
         doctorSpecialty = "Dermatologist & Cosmetologist",
         doctorLicense = "MCI-48921-DERM",
-        clinicName = "DocDirect Bandra Clinic, Mumbai",
+        clinicName = "Payslot Medical Clinic, Mumbai",
         patientName = selectedPatient,
         consultationId = record.appointmentId.ifBlank { "AV-REC-${record.id.takeLast(6)}" },
         consultationDate = record.date,

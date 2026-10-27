@@ -282,7 +282,7 @@ fun AvenClinicianWorkspaceScreen(
                             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AvenTeal, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Profile updated! Your credentials and fee (₹${doctor.consultationFee.toInt()}) are live across DocDirect.",
+                                text = "Profile updated! Your credentials and fee (₹${doctor.consultationFee.toInt()}) are live across Payslot.",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = AvenTeal
@@ -401,7 +401,7 @@ fun AvenClinicianWorkspaceScreen(
                                                                 doctorName = doctor.name.ifBlank { "Dr Mira Shah" },
                                                                 doctorSpecialty = doctor.specialty.ifBlank { "Dermatology" },
                                                                 doctorLicense = doctor.medicalLicense.ifBlank { "MCI-48921-DERM" },
-                                                                clinicName = "DocDirect Medical Clinic",
+                                                                clinicName = "Payslot Medical Clinic",
                                                                 patientName = activeAppointment.patientName,
                                                                 consultationId = activeAppointment.id,
                                                                 consultationDate = activeAppointment.appointmentDate,
@@ -557,7 +557,7 @@ fun AvenClinicianWorkspaceScreen(
                                     doctorName = doctor.name.ifBlank { "Dr Mira Shah" },
                                     doctorSpecialty = doctor.specialty.ifBlank { "Dermatologist" },
                                     doctorLicense = doctor.medicalLicense.ifBlank { "MCI-48921-DERM" },
-                                    clinicName = "DocDirect Bandra Clinic, Mumbai",
+                                    clinicName = "Payslot Medical Clinic, Mumbai",
                                     patientName = activeAppointment.patientName,
                                     consultationId = activeAppointment.id,
                                     consultationDate = activeAppointment.appointmentDate,
@@ -1931,7 +1931,7 @@ fun PatientClinicalHistoryDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text("15 Jan 2026 • Annual Health Checkup", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AvenInk)
-                                    Text("DocDirect Health Screening", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AvenTeal)
+                                    Text("Payslot Health Screening", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AvenTeal)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text("Baseline Vitals: BP 118/76 mmHg • HR 72 bpm • SpO2 99%", fontSize = 11.sp, color = AvenMuted)

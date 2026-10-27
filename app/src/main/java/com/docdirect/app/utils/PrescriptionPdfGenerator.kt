@@ -28,7 +28,7 @@ object PrescriptionPdfGenerator {
         doctorName: String,
         doctorSpecialty: String = "Consultant Physician",
         doctorLicense: String = "MCI-48921-DERM",
-        doctorHospital: String = "DocDirect Bandra Clinic, Mumbai",
+        doctorHospital: String = "Payslot Medical Clinic, Mumbai",
         clinicName: String = doctorHospital,
         patientName: String = "Patient",
         appointmentDate: String = "Today",
@@ -65,7 +65,7 @@ object PrescriptionPdfGenerator {
             paint.color = Color.WHITE
             paint.textSize = 22f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText("AVEN HEALTH  |  DOCDIRECT", 40f, 48f, paint)
+            canvas.drawText("PAYSLOT HEALTHCARE", 40f, 48f, paint)
 
             paint.textSize = 12f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)

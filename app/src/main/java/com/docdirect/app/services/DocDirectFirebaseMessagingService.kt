@@ -92,7 +92,7 @@ class DocDirectFirebaseMessagingService : FirebaseMessagingService() {
             }
 
             else -> {
-                val title = remoteMessage.notification?.title ?: data["title"] ?: "DocDirect Healthcare"
+                val title = remoteMessage.notification?.title ?: data["title"] ?: "Payslot Healthcare"
                 val body = remoteMessage.notification?.body ?: data["body"] ?: "You have a new update regarding your care."
                 val appointmentId = data["appointment_id"] ?: ""
                 val doctorName = data["doctor_name"] ?: "Doctor"

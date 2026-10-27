@@ -372,7 +372,7 @@ fun AvenVerifyScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Aven support will never ask you for it.",
+                            text = "Payslot support will never ask you for it.",
                             fontSize = 12.sp,
                             color = AvenTeal
                         )

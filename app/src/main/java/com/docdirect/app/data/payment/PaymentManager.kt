@@ -99,7 +99,7 @@ object PaymentManager {
             checkout.setKeyID(keyId)
 
             val options = JSONObject().apply {
-                put("name", "DocDirect Healthcare")
+                put("name", "Payslot Healthcare")
                 put("description", "Consultation with $doctorName")
                 put("image", "https://img.icons8.com/color/96/medical-heart.png")
                 put("currency", "INR")
@@ -120,7 +120,7 @@ object PaymentManager {
                 val notes = JSONObject().apply {
                     put("appointment_id", appointmentId)
                     put("doctor_name", doctorName)
-                    put("platform", "DocDirect Aven Mobile")
+                    put("platform", "Payslot Mobile")
                 }
                 put("notes", notes)
 
@@ -158,7 +158,7 @@ object PaymentManager {
 
             val upiUri = Uri.parse("upi://pay").buildUpon()
                 .appendQueryParameter("pa", upiVpa)
-                .appendQueryParameter("pn", "DocDirect Telehealth")
+                .appendQueryParameter("pn", "Payslot Telehealth")
                 .appendQueryParameter("mc", "8062")
                 .appendQueryParameter("tr", txnRef)
                 .appendQueryParameter("tn", "Doctor Consultation - $doctorName")

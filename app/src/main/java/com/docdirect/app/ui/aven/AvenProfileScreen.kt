@@ -718,7 +718,7 @@ fun AvenProfileScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "✓ Computer-generated receipt. Certified by DocDirect Cryptographic Ledger under Sec 80D.",
+                            text = "✓ Computer-generated receipt. Certified by Payslot Cryptographic Ledger under Sec 80D.",
                             modifier = Modifier.padding(8.dp),
                             fontSize = 10.sp,
                             color = AvenTeal
@@ -731,7 +731,7 @@ fun AvenProfileScreen(
                     onClick = {
                         val receiptText = """
 ============================================
-DOCDIRECT AVEN HEALTHCARE - OFFICIAL RECEIPT
+PAYSLOT HEALTHCARE - OFFICIAL RECEIPT
 ============================================
 Receipt No:     ${inv.id}
 Transaction ID: ${inv.transactionId.ifBlank { "TXN-${inv.id.takeLast(6)}" }}
@@ -754,7 +754,7 @@ FEE BREAKDOWN:
 TOTAL AMOUNT:         ₹${inv.totalAmount.toInt()}
 PAYMENT MODE:         ${inv.paymentMethod}
 ============================================
-Digitally certified by DocDirect Telehealth.
+Digitally certified by Payslot Telehealth.
 Eligible for healthcare deduction under Sec 80D.
 """.trimIndent()
 

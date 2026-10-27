@@ -317,7 +317,7 @@ fun AgoraVideoCallScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "DocDirect requires camera and microphone permissions for telehealth video consultations.",
+                        text = "Payslot requires camera and microphone permissions for telehealth video consultations.",
                         color = AvenMuted,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center

@@ -49,7 +49,7 @@ fun AvenWelcomeScreen(
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
                 Column {
-                    // Logo row: [A] aven
+                    // Logo row: [P] payslot
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             shape = RoundedCornerShape(10.dp),
@@ -58,7 +58,7 @@ fun AvenWelcomeScreen(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = "A",
+                                    text = "P",
                                     fontWeight = FontWeight.Black,
                                     fontSize = 20.sp,
                                     color = AvenDeep
@@ -67,7 +67,7 @@ fun AvenWelcomeScreen(
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "aven",
+                            text = "payslot",
                             fontSize = 30.sp,
                             fontWeight = FontWeight.Bold,
                             color = AvenWhite,

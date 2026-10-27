@@ -43,7 +43,7 @@ object AgoraConfig {
      */
     fun getChannelName(appointmentId: String): String {
         val sanitized = appointmentId.replace(Regex("[^a-zA-Z0-9_]"), "_").take(32)
-        return if (sanitized.isNotBlank()) "docdirect_$sanitized" else "docdirect_telehealth_visit"
+        return if (sanitized.isNotBlank()) "payslot_$sanitized" else "payslot_telehealth_visit"
     }
 
     /**
